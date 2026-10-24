@@ -194,4 +194,42 @@ describe('App Full Interaction Smoke Test', () => {
     // Verify no unhandled error boundary crashes
     expect(screen.queryByText(/Component Error/i)).toBeNull();
   });
+
+  it('handles Koramangala demand edit from 420 to 2800 and restores with Reset Demo Data', async () => {
+    await act(async () => {
+      render(<App />);
+    });
+
+    // 1. Search bar is present
+    expect(
+      screen.getByPlaceholderText(/Search & Add Delivery Zone/i)
+    ).toBeInTheDocument();
+
+    // 2. Zone table renders Koramangala
+    expect(screen.getByText('Koramangala')).toBeInTheDocument();
+
+    // Find the input for Koramangala demand (starts at 420)
+    const inputs = screen.getAllByLabelText(/Daily orders/i);
+    const koramangalaInput = inputs.find((inp) => (inp as HTMLInputElement).value === '420');
+    expect(koramangalaInput).toBeDefined();
+
+    if (koramangalaInput) {
+      await act(async () => {
+        fireEvent.change(koramangalaInput, { target: { value: '2800' } });
+        fireEvent.blur(koramangalaInput);
+      });
+      expect((koramangalaInput as HTMLInputElement).value).toBe('2800');
+    }
+
+    // 3. Reset Demo Data restores network
+    const resetBtn = screen.getByRole('button', { name: /Reset Demo Data/i });
+    expect(resetBtn).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(resetBtn);
+    });
+
+    const resetInputs = screen.getAllByLabelText(/Daily orders/i);
+    const resetKoramangala = resetInputs.find((inp) => (inp as HTMLInputElement).value === '420');
+    expect(resetKoramangala).toBeDefined();
+  });
 });

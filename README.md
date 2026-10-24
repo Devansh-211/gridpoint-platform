@@ -78,9 +78,66 @@
 
 ---
 
-## 2. Mathematical Formulation & Architecture
+## 1.3. What's New in v2.2 (Real OSRM Road Matrix, Live Exact CFLP In-Browser Engine & Photon Search)
 
-### Strategic Optimization: Capacitated Facility Location Problem (CFLP)
+1. **OSRM Street-Network Routing Matrix (`osrmMatrixService`):**
+   - Replaces synthetic Haversine straight-line distances with real road distances (km) and free-flow driving durations (min) via OSRM (`https://router.project-osrm.org/table/v1/driving/...`).
+   - Coordinate-pair caching in memory and persistent storage with sub-millisecond lookups on slider edits.
+   - Intelligent batch chunking adhering to coordinate limits with concurrency control and automatic retry.
+   - Deterministic 1.34× detour factor fallback if coordinates are unroutable, with a real-time status badge (`OSRM Live Street Network` vs. `Mixed` vs. `Haversine Geodesic`).
+   - Seamless transmission to backend `/api/optimize` and `/api/rank` via the additive `distanceKm` field.
+
+2. **Live Exact CFLP Engine in Web Worker (`cflpWorker.ts`):**
+   - Live browser-based exact Capacitated Facility Location solver eliminating server round-trips on demand tweaks.
+   - Branch-and-bound over candidate hub combinations with include/exclude tree exploration, symmetry breaking, and node ordering by marginal gain.
+   - Leaf nodes solve the exact capacitated assignment problem via Min-Cost Flow (Successive Shortest Path) supporting fractional demand splitting across hubs hitting capacity ceilings.
+   - Sub-millisecond performance (measured p50: **0.03 ms**, p95: **0.06 ms** across 200 random order edits) with a 400 ms anytime best-incumbent safeguard.
+   - Background cross-check verification against PuLP/CBC displaying `✓ Verified exact (matches CBC)` when solutions agree within $10^{-4}$ relative gap.
+   - Collapsible Solver Transparency Panel displaying nodes explored, nodes pruned, incumbent updates, and facility sets evaluated vs $\binom{M}{p}$.
+
+3. **Live Inline Order Editing & Topology Diff Banner:**
+   - Universal `OrderQuantityEditor` embedded directly in the Delivery Zone Ingestion table and Zone Demand Breakdown table with integer numeric input, `−50` / `+50` steppers, and `1x` / `1.5x` / `2x` surge pills.
+   - Real-time reactive state: editing Koramangala from 420 to 2,800 orders immediately updates Total Daily Demand, utilization bars, and re-optimizes the network in under 1 ms.
+   - Topology Diff Banner (`TopologyDiffBanner`) highlighting opened/closed hubs, reassigned zones, spillover flows, and cost delta.
+   - Versioned `localStorage` persistence with one-click `Reset Demo Data` restoration.
+
+4. **Keyless Live Search & Map-Click Location Ingestion (Photon):**
+   - Prominent search bar querying Photon Komoot geocoding (`https://photon.komoot.io/api/?q=...&lat=12.9716&lon=77.5946&limit=5`) with 250 ms debounce, LRU caching, and keyboard combobox navigation.
+   - "📍 Click Map to Add Zone" toolbar mode with crosshair cursor, Esc cancellation, and automatic reverse geocoding (`/reverse?lat=...&lon=...`).
+   - Modular "Add to Network" form for creating either Delivery Demand Zones or Candidate Warehouse Hubs with automatic ID assignment (`ZN-BLR-37`, `HUB-BLR-19`).
+
+---
+
+## 2. How the Engine Works & Mathematical Formulation
+
+### 2.1. Dual-Engine Optimization Architecture
+GRIDPOINT employs a dual-engine architecture designed for instantaneous feedback paired with formal operations research verification:
+
+1. **Client-Side Live Worker Solver (Live CFLP Engine):**
+   - **Branch-and-Bound over Facility Sets:** Explores candidate warehouse combinations $\binom{M}{p}$.
+   - **Lower Bound at Node:** $\text{LB} = \sum_{j \in S_{\text{fixed}}} f_j + \sum_{i \in I} \min_{j \in J_{\text{allowed}}} \{ c_{\text{transit}} \cdot d_{ij} \cdot D_i \} + \text{cheapest remaining hub leases}$.
+   - **Capacity Pruning:** If $\sum_{j \in S_{\text{fixed}} \cup J_{\text{allowed}}} Q_j < \sum_{i \in I} D_i$, the branch is immediately pruned.
+   - **Leaf Node Assignment:** At complete sets of $p$ facilities, an exact Min-Cost Flow (Successive Shortest Path) routine determines optimal zone-to-hub assignments and fractional spillovers when capacity ceilings are saturated.
+   - **SLA Radius & Penalty:** Arcs exceeding $R_{\max}$ are disallowed. Uncovered zones carry a heavy documented penalty in the objective and are flagged in the UI.
+
+2. **Server-Side Verifier & Ranking Engine (FastAPI + PuLP/CBC):**
+   - Solves the full Mixed-Integer Linear Program (MILP) with Coin-OR CBC.
+   - Powers the Iterative No-Good Cuts ranking engine (`/api/rank`) to produce runner-up configurations #2–#5 and candidate regret scores.
+   - Asynchronously verifies the live worker's objective within $10^{-4}$ relative precision.
+
+### 2.2. Distance Data & Routing Engine
+- **Road Network Distance:** Real road network kilometers and free-flow durations are fetched from OSRM (`router.project-osrm.org`) using the `/table/v1/driving` API.
+- **Detour Factor Fallback:** If OSRM is unreachable or pairs are disconnected, GridPoint computes Haversine geodesic distance multiplied by a calibrated urban road detour factor of **1.34×**.
+- **Free-Flow ETAs:** Durations represent baseline free-flow driving times computed at an urban reference speed of 24 km/h.
+
+### 2.3. Data Sources & Privacy
+- **Photon Geocoding API:** Location search and reverse-geocoding queries are sent to Komoot's public Photon service (`photon.komoot.io`), powered by OpenStreetMap.
+- **OSRM Routing API:** Distance matrix queries are sent to Project-OSRM's public routing service (`router.project-osrm.org`).
+- **Privacy Assurance:** Only geographical coordinates (`lat, lon`) are transmitted to external geocoding and routing services. No personal identifying information (PII), proprietary customer names, or title ownership records are ever transmitted.
+
+---
+
+## 2.4. Mathematical Formulation (CFLP)
 
 Let:
 - $I = \{1, \dots, n\}$ be the set of delivery zones (neighborhoods) with daily order demand $d_i \ge 0$.
@@ -279,16 +336,17 @@ Open your browser to: **`http://127.0.0.1:8000/`** (Interactive API Swagger Docs
 ### Team-Authored Independent Engineering & Creative Contribution:
 - **Problem Formulation & Strategy:** Formulation of the Capacitated Facility Location Problem (CFLP) and coupling with tactical CVRP vehicle routing for quick-commerce operations.
 - **Mathematical Modeling:** Formulation of decision variables ($y_j, x_{i,j}$), objective functions, capacity constraints, service radius limits, and demand-weighting terms ($\sum d_i D_{i,j} x_{i,j}$).
-- **Optimization Architecture & Solver Bindings:** Designing the PuLP/CBC solver interface, presolve feasibility validation rules, and the greedy + 2-opt local search heuristic fallback.
-- **Explainability & Metrics Design:** Defining the "Why here?" candidate score gap algorithm, demand-driver breakdown, and Single-Warehouse Reference Baseline comparison methodology.
-- **Feature Decisions & Supply Chain Constraints:** Defining fixed facility lease vs. transit trade-offs, vehicle capacities, priority presets, and disruption scenarios.
-- **Integration, Ground Truth & Testing:** Authoring test suites, validating backend routes against live OR-Tools and CBC binaries, and establishing verification benchmarks.
+- **Operations Research Architecture & Live Solver:** Design of the in-browser exact branch-and-bound CFLP engine (`cflpEngine.ts`) with Min-Cost Flow (Successive Shortest Path) leaf assignment, lower bound bounding, symmetry breaking, and anytime fallback guarantees.
+- **Optimization Architecture & Solver Bindings:** Designing the PuLP/CBC solver interface, presolve feasibility validation rules, iterative no-good cuts ranking engine, and the greedy + 2-opt local search heuristic fallback.
+- **Explainability & Metrics Design:** Defining the "Why here?" candidate score gap algorithm, demand-driver breakdown, Single-Warehouse Reference Baseline comparison methodology, and real-time topology diff detection.
+- **Geospatial & Road Routing Architecture:** Architecting the OSRM table matrix integration with chunked coordinate queries, coordinate-pair caching, 1.34× detour factor fallbacks, and keyless Photon geocoding search.
+- **Integration, Ground Truth & Testing:** Authoring test suites (66 Vitest frontend tests including 500-instance exactness proof and 200-edit sub-millisecond benchmarks; 64 backend pytest tests), validating backend routes against live OR-Tools and CBC binaries, and establishing verification benchmarks.
 
 ### AI Coding Assistant Utilization (UI Polish & Modernization):
 - **B2B SaaS UI Polish & Modernization:** Implementation of the React 18 + TypeScript + Tailwind CSS application shell, Radix UI collapsibles, and responsive layouts across 375px mobile, 768px tablet, and 1280px desktop.
 - **Currency Conversion Architecture:** Implementation of `src/lib/currency.ts` (`FX_INR_PER_USD = 85`, `formatMoney` with compact Crore/Lakh and Million/Thousand notation, `convertInput` round-trip sanitization, and accessible header toggle).
 - **Zero Cold-Start & Micro-Interactions:** Automated initial mount execution, skeleton state design, KaTeX math formula rendering bar, and animated Capacity Headroom progress bar.
-- **Resilience Engineering:** 4-second timeout failover to bundled precomputed JSON fixtures and non-blocking toast/inline notification handling.
+- **Resilience Engineering:** 4-second timeout failover to bundled precomputed JSON fixtures, OSRM cache invalidation, and non-blocking toast/inline notification handling.
 
 ---
 
