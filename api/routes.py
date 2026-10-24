@@ -8,6 +8,7 @@ import uuid
 import hashlib
 import logging
 from typing import Dict, List, Optional, Any
+import time
 import pandas as pd
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, status
 
@@ -336,6 +337,7 @@ def optimize_network(req: OptimizeRequest):
         )
 
     # Solve CFLP with PuLP + CBC / Heuristic fallback
+    t_start = time.perf_counter()
     cflp_res = solve_cflp(
         neighborhoods=neighborhoods,
         candidates=candidates,
@@ -347,6 +349,7 @@ def optimize_network(req: OptimizeRequest):
         cost_per_km=effective_cost_per_km,
         fixed_cost_per_warehouse=req.fixed_cost_per_warehouse,
     )
+    t_solve_ms = round((time.perf_counter() - t_start) * 1000.0, 1)
 
     if not cflp_res.is_optimal and not cflp_res.status.startswith("Feasible") and cflp_res.status != "Optimal":
         raise HTTPException(
@@ -571,6 +574,9 @@ def optimize_network(req: OptimizeRequest):
         warehouses=warehouses_summary,
         assignments=assignments_list,
         cvrp_summary=cvrp_summary,
+        solve_ms=t_solve_ms,
+        solver_status=cflp_res.status,
+        mip_gap=0.0 if cflp_res.is_optimal else None,
     )
 
 

@@ -105,6 +105,9 @@ class OptimizeResponse(BaseModel):
     warehouses: List[WarehouseSummary]
     assignments: List[AssignmentItem]
     cvrp_summary: Optional[Dict[str, Any]] = None
+    solve_ms: Optional[float] = None
+    solver_status: Optional[str] = None
+    mip_gap: Optional[float] = None
 
 
 

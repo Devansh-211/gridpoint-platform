@@ -16,6 +16,39 @@
 
 ---
 
+## 1.1. What's New in v2.0 (React + TypeScript Enterprise Edition)
+
+1. **Enterprise Dual-Currency Engine (INR Canonical, USD Derived):**
+   - Canonical storage and server-side computation standardized in Indian Rupees (`INR`, ₹).
+   - Dynamic foreign exchange conversion to `USD` ($) via single calibrated constant `FX_INR_PER_USD = 85`.
+   - Accessible header segmented pill (`role="radiogroup"`, keyboard arrow navigation, focus ring, persisted in `localStorage`).
+   - Toggling currency executes **zero network re-solves** (pure client-side projection). User inputs auto-convert to canonical INR before API transmission.
+   - Dual-mode formatting: compact notation (`₹1.2 Cr`, `₹12.4 L`, `$1.4M`, `$50k`) for executive KPI cards; full `Intl.NumberFormat` localized accounting in tables and charts.
+
+2. **Zero Cold-Start Architecture & Resilient Fallback:**
+   - Preloads the 36-zone Bengaluru logistics dataset on initial mount with automatic baseline vs. $p = 3$ optimization.
+   - Animated skeleton loaders eliminate empty/placeholder states (never displays `$0.00` or `₹0` for uncomputed metrics).
+   - Resilient 4-second timeout failover to bundled precomputed demo result (`src/data/demoResult.json`) with non-blocking inline notification and retry trigger.
+
+3. **"Why GridPoint?" Comparison Matrix:**
+   - Radix UI Collapsible 4-column comparison matrix evaluating Capability across Legacy Enterprise Tools, Basic Mapping Tools, and GridPoint Engine.
+   - Semantic `<table>` with `<th scope>` on desktop/tablet; converts automatically to stacked responsive cards below 768px.
+
+4. **KaTeX Mathematical Proof & Formulation Bar:**
+   - Bundled local KaTeX engine rendering exact Mixed-Integer Linear Program (MILP) equations for both Manual and Auto-size modes.
+   - Interactive variable legend and mathematical constraint breakdown ($x_{ij} \le y_j$, $\sum x_{ij} = 1$, capacity ceilings, and radius bounds).
+
+5. **Solver Telemetry & Latency Badge:**
+   - Header badge displaying real-time server-side solve duration (`solve_ms` measured via `time.perf_counter()`), solver status, and MIP gap diagnostics (`mip_gap`).
+
+6. **Animated Capacity Headroom Progress Bar:**
+   - Dynamic system throughput utilization progress bar (`role="progressbar"`) with calibrated color thresholds (Emerald <80%, Amber 80–95%, Red >95%, and striped Infeasible >100%).
+
+7. **Honest Routing Accuracy:**
+   - Clear distinction between exact Mixed-Integer Linear Programming for warehouse location (PuLP/CBC) and heuristic vehicle routing (OR-Tools Guided Local Search metaheuristics).
+
+---
+
 ## 2. Mathematical Formulation & Architecture
 
 ### Strategic Optimization: Capacitated Facility Location Problem (CFLP)
@@ -214,18 +247,19 @@ Open your browser to: **`http://127.0.0.1:8000/`** (Interactive API Swagger Docs
 
 *In compliance with Hackathon Rule §17 on AI Transparency and Integrity:*
 
-### Team's Independent Engineering & Creative Contribution:
+### Team-Authored Independent Engineering & Creative Contribution:
 - **Problem Formulation & Strategy:** Formulation of the Capacitated Facility Location Problem (CFLP) and coupling with tactical CVRP vehicle routing for quick-commerce operations.
 - **Mathematical Modeling:** Formulation of decision variables ($y_j, x_{i,j}$), objective functions, capacity constraints, service radius limits, and demand-weighting terms ($\sum d_i D_{i,j} x_{i,j}$).
-- **Optimization Architecture:** Designing the PuLP/CBC solver interface, presolve feasibility validation rules, and the greedy + 2-opt local search heuristic fallback.
+- **Optimization Architecture & Solver Bindings:** Designing the PuLP/CBC solver interface, presolve feasibility validation rules, and the greedy + 2-opt local search heuristic fallback.
 - **Explainability & Metrics Design:** Defining the "Why here?" candidate score gap algorithm, demand-driver breakdown, and Single-Warehouse Reference Baseline comparison methodology.
-- **Scenario Engineering:** Designing the demand shock multipliers (+20%, +50%) and facility outage resilience tests.
-- **Integration & Validation:** Authoring 26 automated integration test suites and verifying end-to-end execution.
+- **Feature Decisions & Supply Chain Constraints:** Defining fixed facility lease vs. transit trade-offs, vehicle capacities, priority presets, and disruption scenarios.
+- **Integration, Ground Truth & Testing:** Authoring test suites, validating backend routes against live OR-Tools and CBC binaries, and establishing verification benchmarks.
 
-### AI Coding Assistant Utilization:
-- **Code Generation & Boilerplate Acceleration:** Drafting FastAPI endpoint scaffolding, Pydantic data schemas, and Leaflet layer management bindings.
-- **Frontend Refinement:** Assisting in the translation of design system tokens (light theme with soft blue accents, CSS variables, responsive typography) and Chart.js options.
-- **Test Generation Support:** Accelerating test fixture construction for edge cases (duplicate IDs, out-of-bounds coordinates, presolve infeasibility).
+### AI Coding Assistant Utilization (UI Polish & Modernization):
+- **B2B SaaS UI Polish & Modernization:** Implementation of the React 18 + TypeScript + Tailwind CSS application shell, Radix UI collapsibles, and responsive layouts across 375px mobile, 768px tablet, and 1280px desktop.
+- **Currency Conversion Architecture:** Implementation of `src/lib/currency.ts` (`FX_INR_PER_USD = 85`, `formatMoney` with compact Crore/Lakh and Million/Thousand notation, `convertInput` round-trip sanitization, and accessible header toggle).
+- **Zero Cold-Start & Micro-Interactions:** Automated initial mount execution, skeleton state design, KaTeX math formula rendering bar, and animated Capacity Headroom progress bar.
+- **Resilience Engineering:** 4-second timeout failover to bundled precomputed JSON fixtures and non-blocking toast/inline notification handling.
 
 ---
 
