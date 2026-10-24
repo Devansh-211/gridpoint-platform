@@ -208,10 +208,12 @@ def solve_cflp_with_constraints(
 
     # Add no-good cuts: sum_{j in S} y_j <= p - 1
     for cut_idx, cut_set in enumerate(forbidden_sets):
-        prob += pulp.lpSum(y[j] for j in cut_set) <= float(p - 1), f"NoGoodCut_{cut_idx}"
+        valid_cut_vars = [y[j] for j in cut_set if j in y]
+        if len(valid_cut_vars) >= p:
+            prob += pulp.lpSum(valid_cut_vars) <= float(p - 1), f"NoGoodCut_{cut_idx}"
 
     # Forced inclusion constraint: y[forced_open] == 1
-    if forced_open:
+    if forced_open and forced_open in y:
         prob += y[forced_open] == 1.0, f"ForceOpen_{forced_open}"
 
     try:
@@ -271,7 +273,8 @@ def compute_ranking(
     optimal_combined_cost = 0.0
     optimal_transit_cost = 0.0
 
-    if optimal_response is not None:
+    cand_id_set = {c.id for c in candidates}
+    if optimal_response is not None and all(w.warehouse_id in cand_id_set for w in optimal_response.warehouses):
         optimal_sites = {w.warehouse_id for w in optimal_response.warehouses}
         optimal_combined_cost = optimal_response.combined_total_cost
         optimal_transit_cost = optimal_response.total_delivery_cost

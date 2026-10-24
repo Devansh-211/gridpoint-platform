@@ -49,6 +49,35 @@
 
 ---
 
+## 1.2. What's New in v2.1 (Ranking Engine, Regret Quantification & Cadastral Verification)
+
+1. **Iterative No-Good Cuts Ranking Engine (`/api/rank`):**
+   - Ranks top 5 configurations (#1 optimal, #2–#5 runner-up configurations) by iteratively enforcing integer exclusion cuts:
+     $$\sum_{j \in S} y_j \le p - 1$$
+   - Each rank returns total daily cost (INR), delta vs. optimal (₹/day and %), per-site capacity utilization, and which sites were added/removed.
+   - Preserves all core solver bindings and CFLP mathematical formulation in a clean additive module (`optimization/ranking.py`).
+
+2. **Per-Candidate Regret Quantification:**
+   - Regret measures the exact daily penalty of forcing candidate site $j$ to be included in the open set ($y_j = 1$):
+     $$\text{Regret}(j) = \text{Cost}(y_j = 1) - \text{Cost}(\text{Optimal})$$
+   - Parallel multi-threaded execution with a 3-second timeout and linear programming (LP) relaxation fallback if the solver timeout is reached.
+
+3. **Exhaustive LP Verification Benchmark:**
+   - For combinatorial instances $\binom{M}{p} \le 5000$ (e.g. $\binom{20}{3} = 1140$), an exhaustive brute force transportation LP verifies that the MILP branch-and-cut solution matches the true global mathematical minimum with 100% precision.
+
+4. **Interactive Network Map with Footprint Polygons:**
+   - Deterministically sized candidate footprints from `area_sq_ft` with status color coding (Emerald = Optimal, Amber = Runner-up, Slate = Screened/Rejected).
+   - Interactive popups triggering land registry inspection.
+   - Optional live Overpass OpenStreetMap (OSM) zoning context toggle (`landuse=industrial|commercial|retail`) with debouncing and graceful offline fallback.
+   - Visible disclaimer: *"Illustrative footprint, not a surveyed boundary."*
+
+5. **Demo-Only Land Registry Inspector Drawer:**
+   - Radix UI Dialog drawer with copy-to-clipboard helpers for GPS coordinates and locality names.
+   - Curated direct link-outs to official Karnataka portals: **Bhoomi RTC Portal**, **Karnataka GIS (KGIS)**, and **BBMP Property Tax Portal**.
+   - Strict data honesty: zero simulated survey numbers or fake ownership records. Official title fields start blank with in-browser `localStorage` note retention. Completely hidden if user uploads custom zone data.
+
+---
+
 ## 2. Mathematical Formulation & Architecture
 
 ### Strategic Optimization: Capacitated Facility Location Problem (CFLP)

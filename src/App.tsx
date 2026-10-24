@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Currency, DeliveryZone, OptimizeResponse, CompareResponse, TradeoffPoint } from './types';
+import {
+  Currency,
+  DeliveryZone,
+  OptimizeResponse,
+  CompareResponse,
+  TradeoffPoint,
+  RankResponse,
+} from './types';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { KpiCards } from './components/KpiCards';
@@ -9,6 +16,8 @@ import { ControlPanel } from './components/ControlPanel';
 import { BenchmarkComparison } from './components/BenchmarkComparison';
 import { TradeoffChart } from './components/TradeoffChart';
 import { NetworkMap } from './components/NetworkMap';
+import { RankingSection } from './components/RankingSection';
+import { RegistryDrawer } from './components/RegistryDrawer';
 import { CsvIngestion } from './components/CsvIngestion';
 import {
   DEFAULT_DELIVERY_COST_PER_KM_INR,
@@ -20,6 +29,7 @@ import bundledDemoResult from './data/demoResult.json';
 import bundledDemoCompare from './data/demoCompare.json';
 import bundledDemoZones from './data/demoZones.json';
 import bundledDemoTradeoff from './data/demoTradeoff.json';
+import bundledDemoRank from './data/demoRank.json';
 
 import { RefreshCw, Info } from 'lucide-react';
 
@@ -35,7 +45,8 @@ export const App: React.FC = () => {
     localStorage.setItem('gridpoint_currency', newCurr);
   };
 
-  // 2. Network & Optimization State
+  // 2. Demo Mode & Network State
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
   const [zones, setZones] = useState<DeliveryZone[]>(
     (bundledDemoZones as any).preview || []
   );
@@ -54,6 +65,13 @@ export const App: React.FC = () => {
   const [tradeoffPoints, setTradeoffPoints] = useState<TradeoffPoint[]>(
     (bundledDemoTradeoff as any).points || []
   );
+  const [rankingData, setRankingData] = useState<RankResponse | null>(
+    bundledDemoRank as any
+  );
+
+  // Site Inspection State & URL Deep-Linking
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
+  const [isRegistryOpen, setIsRegistryOpen] = useState<boolean>(false);
 
   // Status & Resilience State
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -78,9 +96,36 @@ export const App: React.FC = () => {
     el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
   };
 
+  // URL Deep-Linking check on initial mount (?site=BLR-PL-01)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const siteParam = params.get('site');
+    if (siteParam) {
+      setSelectedSiteId(siteParam);
+      setIsRegistryOpen(true);
+    }
+  }, []);
+
+  const handleSelectSite = (plotId: string) => {
+    setSelectedSiteId(plotId);
+    setIsRegistryOpen(true);
+    // Update URL query string without reloading page
+    const url = new URL(window.location.href);
+    url.searchParams.set('site', plotId);
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const handleCloseRegistry = () => {
+    setIsRegistryOpen(false);
+    // Remove query string from URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('site');
+    window.history.pushState({}, '', url.toString());
+  };
+
   // Perform Network Solve
   const executeSolve = useCallback(
-    async (overrideParams?: Partial<{ p: number; zones: DeliveryZone[] }>) => {
+    async (overrideParams?: Partial<{ p: number; zones: DeliveryZone[]; isCustom?: boolean }>) => {
       // Abort any in-flight solve
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -94,11 +139,12 @@ export const App: React.FC = () => {
       const targetP = overrideParams?.p ?? p;
       const targetCost = deliveryCostInr;
       const targetLease = fixedLeaseInr;
+      const customFlag = overrideParams?.isCustom !== undefined ? overrideParams.isCustom : !isDemoMode;
 
       // 4-second timeout to fall back gracefully if backend is slow/unreachable
       const timeoutId = setTimeout(() => {
         controller.abort();
-      }, 4000);
+      }, 4500);
 
       try {
         const res = await fetch('/api/optimize', {
@@ -136,7 +182,6 @@ export const App: React.FC = () => {
             setCompareData(compJson);
           }
         } catch {
-          // If compare fails, fallback to bundled compare
           setCompareData(bundledDemoCompare as any);
         }
 
@@ -150,16 +195,45 @@ export const App: React.FC = () => {
         } catch {
           // fallback Tradeoff
         }
+
+        // Fetch /api/rank if in demo mode
+        if (!customFlag) {
+          try {
+            const rankRes = await fetch('/api/rank', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: 'default',
+                p: targetP,
+                max_alternatives: 4,
+                warehouse_capacity: warehouseCapacity,
+                cost_per_km: targetCost,
+                fixed_cost_per_warehouse: targetLease,
+              }),
+            });
+            if (rankRes.ok) {
+              const rJson: RankResponse = await rankRes.json();
+              setRankingData(rJson);
+            }
+          } catch {
+            setRankingData(bundledDemoRank as any);
+          }
+        } else {
+          setRankingData(null);
+        }
       } catch (err: any) {
         // Fallback to bundled precomputed result
-        console.warn('Backend unavailable or timed out; falling back to bundled demoResult.json', err);
+        console.warn('Backend unavailable or timed out; falling back to bundled demo data', err);
         setIsCachedFallback(true);
         setOptimizeData(bundledDemoResult as any);
         setCompareData(bundledDemoCompare as any);
         setTradeoffPoints((bundledDemoTradeoff as any).points || []);
+        if (!customFlag) {
+          setRankingData(bundledDemoRank as any);
+        }
 
         if (err.name !== 'AbortError') {
-          setErrorNotice('Backend unreachable or slow (>4s). Showing bundled demo result.');
+          setErrorNotice('Backend unreachable. Showing cached demo result.');
         } else {
           setErrorNotice('Backend took >4s to respond. Showing cached demo result.');
         }
@@ -170,20 +244,22 @@ export const App: React.FC = () => {
         abortControllerRef.current = null;
       }
     },
-    [p, autoSize, pMax, warehouseCapacity, radiusMaxKm, deliveryCostInr, fixedLeaseInr, priorityPreset]
+    [p, autoSize, pMax, warehouseCapacity, radiusMaxKm, deliveryCostInr, fixedLeaseInr, priorityPreset, isDemoMode]
   );
 
-  // TASK 3: On mount, preload 36-zone Bengaluru dataset and automatically run baseline vs p=3
+  // On mount, preload 36-zone Bengaluru dataset and automatically run baseline vs p=3
   useEffect(() => {
-    executeSolve({ p: 3 });
+    executeSolve({ p: 3, isCustom: false });
   }, []);
 
   // Primary CTA: Run Bengaluru Demo (36 Zones)
   const handleRunDemo = async () => {
     if (isSolving) return;
+    setIsDemoMode(true);
+    setZones((bundledDemoZones as any).preview || []);
     setP(3);
     setAutoSize(false);
-    await executeSolve({ p: 3 });
+    await executeSolve({ p: 3, isCustom: false });
 
     // Smooth-scroll to results and focus heading
     smoothScrollTo('resultsSection');
@@ -198,6 +274,7 @@ export const App: React.FC = () => {
 
   // When custom zones are ingested
   const handleCustomZones = async (newZones: DeliveryZone[]) => {
+    setIsDemoMode(false);
     setZones(newZones);
     try {
       await fetch('/api/neighborhoods', {
@@ -216,7 +293,7 @@ export const App: React.FC = () => {
     } catch {
       // offline mode
     }
-    await executeSolve({ zones: newZones });
+    await executeSolve({ zones: newZones, isCustom: true });
     smoothScrollTo('resultsSection');
   };
 
@@ -224,6 +301,10 @@ export const App: React.FC = () => {
     setWhyOpen((prev) => !prev);
     smoothScrollTo('whyGridPointSection');
   };
+
+  // Active inspected site object
+  const activeInspectedSite =
+    rankingData?.site_scores.find((c) => c.plot_id === selectedSiteId) || null;
 
   return (
     <div className="min-h-screen bg-gp-bg text-gp-text-primary flex flex-col font-sans antialiased">
@@ -311,16 +392,21 @@ export const App: React.FC = () => {
                   tabIndex={-1}
                   className="text-lg font-bold text-gp-text-primary focus:outline-none"
                 >
-                  Network Topology & Zone Cluster Assignments
+                  Network Topology & Candidate Footprints
                 </h2>
                 <p className="text-xs text-gp-text-secondary">
                   Active delivery network with {optimizeData?.warehouses.length || 3} strategic distribution depots
-                  serving {zones.length || 36} demand zones
+                  serving {zones.length || 36} demand zones • Click any candidate site to inspect Land Registry Template
                 </p>
               </div>
             </div>
 
-            <NetworkMap optimizeData={optimizeData} />
+            <NetworkMap
+              optimizeData={optimizeData}
+              candidates={rankingData?.site_scores || []}
+              selectedPlotId={selectedSiteId}
+              onSelectSite={handleSelectSite}
+            />
           </section>
 
           {/* Mathematical Proof Bar (KaTeX) */}
@@ -329,6 +415,32 @@ export const App: React.FC = () => {
             onProofOpenChange={setProofOpen}
             isAutoSize={autoSize}
           />
+
+          {/* Ranking & Alternative Configurations Section */}
+          {isDemoMode && rankingData && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-gp-text-primary">
+                    Warehouse Site Ranking & Alternative Configurations
+                  </h2>
+                  <p className="text-xs text-gp-text-secondary">
+                    Iterative no-good cuts rank alternatives #2–#5 with regret quantification and LP verification
+                  </p>
+                </div>
+              </div>
+
+              <RankingSection
+                optimizeData={optimizeData}
+                alternatives={rankingData.alternatives}
+                candidates={rankingData.site_scores}
+                currency={currency}
+                isLoading={isSolving}
+                onSelectSite={handleSelectSite}
+                selectedPlotId={selectedSiteId}
+              />
+            </section>
+          )}
 
           {/* Strategic Control Panel & Live Currency Inputs */}
           <section>
@@ -372,6 +484,15 @@ export const App: React.FC = () => {
           <CsvIngestion onZonesLoaded={handleCustomZones} uploadInputRef={uploadInputRef} />
         </div>
       </main>
+
+      {/* Land Registry Inspector Drawer (Demo Only, Radix Dialog) */}
+      <RegistryDrawer
+        site={activeInspectedSite}
+        isOpen={isRegistryOpen}
+        onClose={handleCloseRegistry}
+        currency={currency}
+        isDemoMode={isDemoMode}
+      />
 
       {/* Footer with AI Usage Disclosure & Honesty Notice */}
       <footer className="border-t border-gp-border bg-white px-4 py-8 sm:px-6 lg:px-8 text-xs text-gp-text-tertiary">
