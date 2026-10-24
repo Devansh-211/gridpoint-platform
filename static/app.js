@@ -1957,7 +1957,7 @@ function setupEventListeners() {
     await loadDemoData();
     switchView("viewResults");
   });
-  document.getElementById("btnGlobalOptimize").addEventListener("click", async () => {
+  document.getElementById("btnGlobalOptimize")?.addEventListener("click", async () => {
     const ok = await runOptimization();
     if (ok) switchView("viewResults");
   });
