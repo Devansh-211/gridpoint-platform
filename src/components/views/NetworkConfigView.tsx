@@ -376,9 +376,10 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Cost Focus */}
-                <div
+                <button
+                  type="button"
                   onClick={() => onPriorityPresetChange('cost')}
-                  className={`rounded-xl p-4 border-2 cursor-pointer transition space-y-2 ${
+                  className={`text-left w-full rounded-xl p-4 border-2 transition space-y-2 ${
                     priorityPreset === 'cost'
                       ? 'border-blue-600 bg-blue-50/40 shadow-xs'
                       : 'border-slate-200 hover:border-slate-300'
@@ -402,12 +403,13 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                   <div className="text-[10px] font-mono font-semibold text-slate-500 pt-1">
                     f_j={formatMoney(fixedLeaseInr, currency)}/day • c_ij={formatMoney(deliveryCostInr, currency)}/km
                   </div>
-                </div>
+                </button>
 
                 {/* Speed & Proximity */}
-                <div
+                <button
+                  type="button"
                   onClick={() => onPriorityPresetChange('speed')}
-                  className={`rounded-xl p-4 border-2 cursor-pointer transition space-y-2 ${
+                  className={`text-left w-full rounded-xl p-4 border-2 transition space-y-2 ${
                     priorityPreset === 'speed'
                       ? 'border-blue-600 bg-blue-50/40 shadow-xs'
                       : 'border-slate-200 hover:border-slate-300'
@@ -431,12 +433,13 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                   <div className="text-[10px] font-mono font-semibold text-slate-500 pt-1">
                     R_max ≤ {radiusMaxKm ?? 20} km SLA
                   </div>
-                </div>
+                </button>
 
                 {/* CO2 Abatement */}
-                <div
+                <button
+                  type="button"
                   onClick={() => onPriorityPresetChange('sustainability')}
-                  className={`rounded-xl p-4 border-2 cursor-pointer transition space-y-2 ${
+                  className={`text-left w-full rounded-xl p-4 border-2 transition space-y-2 ${
                     priorityPreset === 'sustainability'
                       ? 'border-blue-600 bg-blue-50/40 shadow-xs'
                       : 'border-slate-200 hover:border-slate-300'
@@ -460,7 +463,7 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                   <div className="text-[10px] font-mono font-semibold text-slate-500 pt-1">
                     Carbon Penalized Objective
                   </div>
-                </div>
+                </button>
               </div>
             </div>
 

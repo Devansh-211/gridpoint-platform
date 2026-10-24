@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from '../shell/PageHeader';
 import { NetworkMap } from '../NetworkMap';
 import { ZoneDemandTable } from '../ZoneDemandTable';
@@ -97,6 +97,18 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
   const [isClickToAddActive, setIsClickToAddActive] = useState(false);
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
   const [targetPinHubId, setTargetPinHubId] = useState<string>('');
+
+  // Listen for Escape key to exit map click mode
+  useEffect(() => {
+    if (!isClickToAddActive) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsClickToAddActive(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isClickToAddActive]);
 
   // Active zone
   const activeZone = useMemo(() => {
@@ -266,6 +278,22 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
           </div>
         }
       />
+
+      {isClickToAddActive && (
+        <div className="mx-4 sm:mx-6 lg:mx-8 flex items-center justify-between rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs font-semibold text-blue-900 shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Crosshair className="h-4 w-4 text-blue-600 animate-pulse" />
+            <span>Click on the map to drop a new demand node (or press Esc to cancel)</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsClickToAddActive(false)}
+            className="text-xs font-bold text-blue-700 hover:text-blue-900 underline"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       <div className="px-4 sm:px-6 lg:px-8 space-y-6">
         {/* 2. Top KPI Cards Row */}
