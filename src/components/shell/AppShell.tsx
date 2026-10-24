@@ -50,7 +50,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:pl-64">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col lg:pl-64 md:pl-20 pl-0">
       {/* 256px Sidebar */}
       <Sidebar
         currentRoute={currentRoute}

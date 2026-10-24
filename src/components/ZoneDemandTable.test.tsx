@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ZoneDemandTable } from './ZoneDemandTable';
 import { EditableZone } from '../lib/networkState';
 
@@ -26,7 +26,7 @@ describe('ZoneDemandTable', () => {
     expect(screen.getByText('990')).toBeInTheDocument();
   });
 
-  it('filters zones using search input', () => {
+  it('filters zones using search input', async () => {
     render(
       <ZoneDemandTable
         zones={sampleZones}
@@ -39,8 +39,10 @@ describe('ZoneDemandTable', () => {
     const searchInput = screen.getByPlaceholderText('Filter zones by name or ID...');
     fireEvent.change(searchInput, { target: { value: 'Kora' } });
 
-    expect(screen.getByText('Koramangala')).toBeInTheDocument();
-    expect(screen.queryByText('Indiranagar')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Koramangala')).toBeInTheDocument();
+      expect(screen.queryByText('Indiranagar')).not.toBeInTheDocument();
+    });
   });
 
   it('triggers delete zone callback', () => {

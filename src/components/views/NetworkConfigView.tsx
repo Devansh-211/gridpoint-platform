@@ -38,9 +38,10 @@ interface NetworkConfigViewProps {
   isSolving: boolean;
   optimizeData: OptimizeResponse | null;
   onResetDefaults: () => void;
-  onSavePreset?: (name: string) => void;
+  onSavePreset?: (presetName: string) => void;
   selectedPlotId?: string | null;
   onSelectSite?: (plotId: string) => void;
+  candidates?: import('../../types').SiteScoreItem[];
 }
 
 export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
@@ -70,6 +71,7 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
   onSavePreset,
   selectedPlotId: _selectedPlotId,
   onSelectSite,
+  candidates,
 }) => {
   const [proofOpen, setProofOpen] = useState(false);
   const [savePresetName, setSavePresetName] = useState('');
@@ -92,6 +94,10 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
   const hourlyData = useMemo(() => {
     return calculateHourlyOrders(totalDemand);
   }, [totalDemand]);
+
+  const maxHourlyOrders = useMemo(() => {
+    return Math.max(1, ...hourlyData.map((b) => b.orders));
+  }, [hourlyData]);
 
   const maxCandidateNodes = Math.max(1, hubs.length);
   const sym = currencySymbol(currency);
@@ -393,8 +399,8 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                   <p className="text-[11px] text-slate-500 leading-relaxed">
                     Minimize fixed facility leases and per-km dispatch spend across all corridors.
                   </p>
-                  <div className="text-[10px] font-mono font-semibold text-slate-400 pt-1">
-                    w1=0.75, w2=0.25
+                  <div className="text-[10px] font-mono font-semibold text-slate-500 pt-1">
+                    f_j={formatMoney(fixedLeaseInr, currency)}/day • c_ij={formatMoney(deliveryCostInr, currency)}/km
                   </div>
                 </div>
 
@@ -408,7 +414,7 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                   }`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-xs text-slate-900">⚡ Speed & Proximity</span>
+                    <span className="font-bold text-xs text-slate-900">⚡ Speed &amp; Proximity</span>
                     <span
                       className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ${
                         priorityPreset === 'speed'
@@ -420,10 +426,10 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-relaxed">
-                    Strict SLA fulfillment (&lt;12 km average radius) with sub-45 min delivery guarantees.
+                    Strict SLA fulfillment with sub-45 min delivery guarantees across dense urban corridors.
                   </p>
-                  <div className="text-[10px] font-mono font-semibold text-slate-400 pt-1">
-                    Δ SLA ≤ 12km
+                  <div className="text-[10px] font-mono font-semibold text-slate-500 pt-1">
+                    R_max ≤ {radiusMaxKm ?? 20} km SLA
                   </div>
                 </div>
 
@@ -449,10 +455,10 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-relaxed">
-                    Internalizes carbon price penalties at $0.21/kg CO2 with EV-preference routes.
+                    Internalizes carbon price penalties at {currency === 'USD' ? '$0.21' : '₹17.5'}/kg CO2 with EV-preference routes.
                   </p>
-                  <div className="text-[10px] font-mono font-semibold text-slate-400 pt-1">
-                    Penalized MIP
+                  <div className="text-[10px] font-mono font-semibold text-slate-500 pt-1">
+                    Carbon Penalized Objective
                   </div>
                 </div>
               </div>
@@ -641,13 +647,15 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
               <div className="space-y-1.5 pt-3 border-t border-slate-100">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-800">Peak Hour Demand Profile (08:00–20:00)</span>
-                  <span className="text-[11px] font-semibold text-blue-600">Max: 1,428 pkts/hr</span>
+                  <span className="text-[11px] font-semibold text-blue-600">
+                    Max: {maxHourlyOrders.toLocaleString()} orders/hr
+                  </span>
                 </div>
                 <div className="h-20 flex items-end gap-1.5 pt-2">
                   {hourlyData.slice(0, 13).map((b, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center">
                       <div
-                        style={{ height: `${Math.max(14, (b.orders / 1428) * 60)}px` }}
+                        style={{ height: `${Math.max(14, (b.orders / maxHourlyOrders) * 60)}px` }}
                         className={`w-full rounded-xs transition ${
                           b.isPeak ? 'bg-blue-600' : 'bg-slate-200'
                         }`}
@@ -677,6 +685,7 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                   const isOpen = optimizeData?.warehouses.some((w: WarehouseSummary) => w.warehouse_id === hub.id);
                   const assignedWh = optimizeData?.warehouses.find((w: WarehouseSummary) => w.warehouse_id === hub.id);
                   const utilPct = assignedWh ? assignedWh.capacity_utilization_pct : 0;
+                  const candScore = candidates?.find((c) => c.plot_id === hub.id);
 
                   return (
                     <div
@@ -690,8 +699,26 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
                             {hub.name}
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          Cap: {hub.capacity.toLocaleString()} • {formatMoney(hub.dailyLease, currency)}/day
+                        <div className="text-[11px] text-slate-500 mt-0.5 flex flex-wrap gap-x-2">
+                          <span>Cap: {hub.capacity.toLocaleString()}</span>
+                          <span>•</span>
+                          <span>{formatMoney(hub.dailyLease, currency)}/day</span>
+                          {assignedWh && (
+                            <>
+                              <span>•</span>
+                              <span className="text-blue-700 font-medium">
+                                {assignedWh.neighborhoods_count} zones served ({assignedWh.assigned_demand.toLocaleString()} ord)
+                              </span>
+                            </>
+                          )}
+                          {candScore?.regret_inr !== undefined && (
+                            <>
+                              <span>•</span>
+                              <span className="text-slate-600 font-mono">
+                                Regret: {formatMoney(candScore.regret_inr, currency)}
+                              </span>
+                            </>
+                          )}
                         </div>
                         {isOpen && (
                           <div className="mt-1.5 flex items-center gap-2">

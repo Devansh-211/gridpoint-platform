@@ -64,9 +64,12 @@ app.add_middleware(
 # Register API routes
 app.include_router(api_router)
 
-# Mount static files at root
+# Mount frontend bundle at root (prefer built dist/, fallback to static/)
+dist_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-if os.path.exists(static_dir):
+if os.path.exists(dist_dir):
+    app.mount("/", StaticFiles(directory=dist_dir, html=True), name="dist")
+elif os.path.exists(static_dir):
     app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 

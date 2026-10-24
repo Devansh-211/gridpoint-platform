@@ -54,6 +54,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onCloseMobile();
   };
 
+  // Listen for Escape key to close mobile drawer
+  React.useEffect(() => {
+    if (!isMobileOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCloseMobile();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen, onCloseMobile]);
+
   const navContent = (
     <div className="flex h-full flex-col justify-between bg-[#F8FAFC] border-r border-[#E2E8F0]">
       {/* Brand & Workspace Section */}
@@ -65,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={(e) => handleNavClick('overview', '#/overview', e)}
             className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0F172A] text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0F172A] text-white shadow-sm shrink-0">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <circle cx="6" cy="6" r="2.5" />
                 <circle cx="18" cy="6" r="2.5" />
@@ -74,8 +86,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="text-[13px] font-bold tracking-tight text-[#0F172A]">GRIDPOINT</span>
-              <span className="text-[9.5px] font-semibold uppercase tracking-wider text-[#64748B]">
+              <span className="text-[13px] font-bold tracking-tight text-[#0F172A] whitespace-nowrap">GRIDPOINT</span>
+              <span className="text-[9.5px] font-semibold uppercase tracking-wider text-[#64748B] whitespace-nowrap">
                 LOGISTICS INTELLIGENCE
               </span>
             </div>
@@ -85,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="md:hidden p-1.5 text-slate-500 hover:text-slate-800 rounded-md"
+            className="lg:hidden p-1.5 text-slate-500 hover:text-slate-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Close Sidebar"
           >
             <X className="h-5 w-5" />
@@ -151,14 +163,87 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </div>
   );
 
+  // Icon Rail Content for Tablet (768px - 1023px)
+  const iconRailContent = (
+    <div className="flex h-full flex-col justify-between items-center bg-[#F8FAFC] border-r border-[#E2E8F0] py-4 w-20">
+      <div className="flex flex-col items-center gap-6">
+        <a
+          href="#/overview"
+          onClick={(e) => handleNavClick('overview', '#/overview', e)}
+          className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0F172A] text-white shadow-sm"
+          title="GridPoint Logistics Intelligence"
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <circle cx="6" cy="6" r="2.5" />
+            <circle cx="18" cy="6" r="2.5" />
+            <circle cx="12" cy="18" r="2.5" />
+            <path d="M7.8 7.8L16.2 16.2M16.2 7.8L7.8 16.2" />
+          </svg>
+        </a>
+
+        <div className="flex flex-col items-center gap-1.5">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentRoute === item.id;
+            return (
+              <a
+                key={item.id}
+                href={item.hash}
+                onClick={(e) => handleNavClick(item.id, item.hash, e)}
+                aria-current={isActive ? 'page' : undefined}
+                title={item.label}
+                aria-label={item.label}
+                className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-[#0F172A] text-white shadow-sm'
+                    : 'text-[#64748B] hover:bg-[#EDF2F7] hover:text-[#0F172A]'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+              </a>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          title="Settings"
+          aria-label="Settings"
+          className="flex h-10 w-10 items-center justify-center text-[#64748B] hover:bg-[#EDF2F7] hover:text-[#0F172A] rounded-lg transition"
+        >
+          <Settings className="h-5 w-5" />
+        </button>
+
+        <div
+          title={solverOnline ? `Solver Online: ${solveMs !== null ? `${solveMs}ms` : 'CBC Active'}` : 'Solver Offline'}
+          className="h-3 w-3 rounded-full flex items-center justify-center"
+        >
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${
+              solverOnline ? 'bg-emerald-500 ring-2 ring-emerald-100' : 'bg-amber-500 ring-2 ring-amber-100'
+            }`}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      {/* Desktop Fixed 256px Sidebar */}
-      <aside className="hidden md:flex fixed top-0 left-0 bottom-0 z-30 w-64 flex-col">
+      {/* Desktop Fixed 256px Sidebar (>= 1024px) */}
+      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 z-30 w-64 flex-col">
         {navContent}
       </aside>
 
-      {/* Mobile Drawer (with backdrop) */}
+      {/* Tablet Collapsed Icon Rail (768px - 1023px) */}
+      <aside className="hidden md:flex lg:hidden fixed top-0 left-0 bottom-0 z-30 w-20 flex-col">
+        {iconRailContent}
+      </aside>
+
+      {/* Mobile Drawer (with focus trap & backdrop) below 768px */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden" role="dialog" aria-modal="true">
           <div
@@ -166,7 +251,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-          <div className="relative flex w-64 max-w-xs flex-1 flex-col shadow-2xl">
+          <div className="relative flex w-64 max-w-xs flex-1 flex-col shadow-2xl z-10">
             {navContent}
           </div>
         </div>

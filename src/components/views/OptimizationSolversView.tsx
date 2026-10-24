@@ -106,11 +106,11 @@ export const OptimizationSolversView: React.FC<OptimizationSolversViewProps> = (
       )}
 
       {/* 3. Live Solver Transparency & Verification Telemetry */}
-      {solverOutput && (
+      {solverOutput ? (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Solver Execution Telemetry & Verification
+              Solver Execution Telemetry &amp; Verification
             </h2>
           </div>
           <SolverTransparencyPanel
@@ -120,6 +120,24 @@ export const OptimizationSolversView: React.FC<OptimizationSolversViewProps> = (
             cbcObjective={cbcWarning?.cbcObj ?? solverOutput.combinedTotalCostInr}
             workerObjective={solverOutput.combinedTotalCostInr}
           />
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center space-y-3">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Awaiting Solver Execution
+          </div>
+          <p className="text-sm text-slate-600 max-w-md mx-auto">
+            Run the Branch-and-Cut integer programming solver to view live execution telemetry, branch bounds, and CBC verification.
+          </p>
+          <button
+            type="button"
+            disabled={isSolving}
+            onClick={onRunOptimizer}
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition"
+          >
+            <Play className="h-3.5 w-3.5" />
+            <span>{isSolving ? 'Solving...' : 'Run Optimization Solver'}</span>
+          </button>
         </div>
       )}
 

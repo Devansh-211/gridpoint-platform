@@ -305,6 +305,8 @@ export const App: React.FC = () => {
             onMapClickAddLocation={(place) => setExternalMapPlace(place)}
             externalPlace={externalMapPlace}
             onClearExternalPlace={() => setExternalMapPlace(null)}
+            radiusMaxKm={pipeline.radiusMaxKm}
+            deliveryCostInr={pipeline.deliveryCostInr}
           />
         </ErrorBoundary>
       )}
@@ -353,6 +355,7 @@ export const App: React.FC = () => {
               setSelectedSiteId(plotId);
               setIsRegistryOpen(true);
             }}
+            candidates={pipeline.rankingData?.site_scores}
           />
         </ErrorBoundary>
       )}
