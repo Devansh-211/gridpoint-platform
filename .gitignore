@@ -16,6 +16,10 @@ htmlcov/
 .agents/
 .gemini/
 
+# Node / Vite
+node_modules/
+dist/
+
 # OS and Editor
 .DS_Store
 Thumbs.db
