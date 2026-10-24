@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { OptimizeResponse, SiteScoreItem } from '../types';
+import { OptimizeResponse, SiteScoreItem, Currency } from '../types';
+import { formatMoney } from '../lib/currency';
 import { Layers, Loader2 } from 'lucide-react';
 
 interface NetworkMapProps {
@@ -9,6 +10,7 @@ interface NetworkMapProps {
   candidates?: SiteScoreItem[];
   selectedPlotId?: string | null;
   onSelectSite?: (plotId: string) => void;
+  currency?: Currency;
 }
 
 const CLUSTER_COLORS = [
@@ -70,6 +72,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
   candidates = [],
   selectedPlotId = null,
   onSelectSite,
+  currency = 'INR',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -120,8 +123,30 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
 
     mapInstanceRef.current = map;
 
+    // Invalidate size once container renders
+    const invalidateTimer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    const handleResize = () => {
+      map.invalidateSize();
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
-      map.remove();
+      clearTimeout(invalidateTimer);
+      window.removeEventListener('resize', handleResize);
+      try {
+        layersRef.current.warehouses.clearLayers();
+        layersRef.current.candidates.clearLayers();
+        layersRef.current.zones.clearLayers();
+        layersRef.current.lines.clearLayers();
+        layersRef.current.radii.clearLayers();
+        layersRef.current.osmLanduse.clearLayers();
+        map.remove();
+      } catch {
+        // Safe disposal
+      }
       mapInstanceRef.current = null;
     };
   }, []);
@@ -131,11 +156,12 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
     const map = mapInstanceRef.current;
     if (!map || !optimizeData) return;
 
-    layersRef.current.warehouses.clearLayers();
-    layersRef.current.candidates.clearLayers();
-    layersRef.current.zones.clearLayers();
-    layersRef.current.lines.clearLayers();
-    layersRef.current.radii.clearLayers();
+    try {
+      layersRef.current.warehouses.clearLayers();
+      layersRef.current.candidates.clearLayers();
+      layersRef.current.zones.clearLayers();
+      layersRef.current.lines.clearLayers();
+      layersRef.current.radii.clearLayers();
 
     const wColorMap: Record<string, string> = {};
     optimizeData.warehouses.forEach((w, idx) => {
@@ -240,8 +266,8 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:11px;">
               <div>Area: <strong>${cand.area_sq_ft.toLocaleString()}</strong> sq ft</div>
               <div>Gravity: <strong>${cand.gravity_score}</strong>/100</div>
-              <div>Daily Lease: <strong>₹${Math.round(cand.effective_daily_lease_inr).toLocaleString()}</strong></div>
-              <div>Regret: <strong>₹${Math.round(cand.regret_inr).toLocaleString()}</strong>/d</div>
+              <div>Daily Lease: <strong>${formatMoney(cand.effective_daily_lease_inr, currency)}</strong></div>
+              <div>Regret: <strong>${formatMoney(cand.regret_inr, currency)}</strong>/d</div>
             </div>
             <div style="margin-top:8px;">
               <button 
@@ -327,6 +353,9 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
 
     if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [30, 30] });
+    }
+    } catch (err) {
+      console.warn('NetworkMap layer update notice:', err);
     }
   }, [optimizeData, candidates, selectedPlotId, showRadius, showLines, showFootprints, onSelectSite]);
 

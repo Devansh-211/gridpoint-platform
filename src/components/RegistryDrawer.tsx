@@ -199,7 +199,7 @@ export const RegistryDrawer: React.FC<RegistryDrawerProps> = ({
                 <div>
                   <div className="text-[11px] text-slate-500">Solver Regret</div>
                   <div className="font-bold tabular-nums text-slate-900">
-                    {site.regret_inr === 0 ? '₹0/day' : `+${formatMoney(site.regret_inr, currency)}/day`}
+                    {site.regret_inr === 0 ? `${formatMoney(0, currency)}/day` : `+${formatMoney(site.regret_inr, currency)}/day`}
                   </div>
                 </div>
               </div>

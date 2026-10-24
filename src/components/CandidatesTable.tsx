@@ -94,7 +94,7 @@ export const CandidatesTable: React.FC<CandidatesTableProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent font-medium text-slate-800 outline-hidden"
+              className="bg-transparent font-medium text-slate-800 outline-none"
               aria-label="Filter candidates by status"
             >
               <option value="ALL">All ({candidates.length})</option>
@@ -112,7 +112,7 @@ export const CandidatesTable: React.FC<CandidatesTableProps> = ({
               <select
                 value={zoningFilter}
                 onChange={(e) => setZoningFilter(e.target.value)}
-                className="bg-transparent font-medium text-slate-800 outline-hidden"
+                className="bg-transparent font-medium text-slate-800 outline-none"
                 aria-label="Filter candidates by zoning classification"
               >
                 <option value="ALL">All Zonings</option>
@@ -278,7 +278,7 @@ export const CandidatesTable: React.FC<CandidatesTableProps> = ({
                   </td>
                   <td className="px-3 py-3 text-right font-mono tabular-nums">
                     {c.regret_inr === 0 ? (
-                      <span className="font-semibold text-emerald-700">₹0/day</span>
+                      <span className="font-semibold text-emerald-700">{formatMoney(0, currency)}/day</span>
                     ) : (
                       <span className="font-semibold text-slate-800">
                         {c.regret_estimated ? '≈ ' : '+'}

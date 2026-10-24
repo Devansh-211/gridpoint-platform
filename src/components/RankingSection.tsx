@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { AlternativeConfig, SiteScoreItem, OptimizeResponse, Currency } from '../types';
+import { formatMoney } from '../lib/currency';
 import { AlternativesLeaderboard } from './AlternativesLeaderboard';
 import { CandidatesTable } from './CandidatesTable';
 import { Download, Layers, Award, ListFilter } from 'lucide-react';
@@ -17,8 +18,8 @@ interface RankingSectionProps {
 
 export const RankingSection: React.FC<RankingSectionProps> = ({
   optimizeData,
-  alternatives,
-  candidates,
+  alternatives = [],
+  candidates = [],
   currency,
   isLoading = false,
   onSelectSite,
@@ -117,7 +118,7 @@ export const RankingSection: React.FC<RankingSectionProps> = ({
           >
             <Layers className="h-4 w-4" />
             <span>Alternatives Leaderboard (Ranks #2–#5)</span>
-            {alternatives.length > 0 && (
+            {alternatives && alternatives.length > 0 && (
               <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                 activeTab === 'alternatives' ? 'bg-blue-800 text-white' : 'bg-slate-200 text-slate-700'
               }`}>
@@ -136,7 +137,7 @@ export const RankingSection: React.FC<RankingSectionProps> = ({
           >
             <ListFilter className="h-4 w-4" />
             <span>All Candidates & Regret Scores</span>
-            {candidates.length > 0 && (
+            {candidates && candidates.length > 0 && (
               <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                 activeTab === 'all' ? 'bg-blue-800 text-white' : 'bg-slate-200 text-slate-700'
               }`}>
@@ -147,7 +148,7 @@ export const RankingSection: React.FC<RankingSectionProps> = ({
         </Tabs.List>
 
         {/* Tab 1: Optimal Network */}
-        <Tabs.Content value="optimal" className="space-y-4 outline-hidden">
+        <Tabs.Content value="optimal" className="space-y-4 outline-none">
           {optimizeData && (
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
@@ -159,7 +160,7 @@ export const RankingSection: React.FC<RankingSectionProps> = ({
                     </span>
                   </div>
                   <div className="text-xs text-slate-500">
-                    Combined Cost: <span className="font-bold text-slate-900">₹{optimizeData.combined_total_cost.toLocaleString()}/day</span>
+                    Combined Cost: <span className="font-bold text-slate-900">{formatMoney(optimizeData.combined_total_cost, currency)}/day</span>
                   </div>
                 </div>
               </div>
@@ -168,7 +169,7 @@ export const RankingSection: React.FC<RankingSectionProps> = ({
         </Tabs.Content>
 
         {/* Tab 2: Alternatives Leaderboard */}
-        <Tabs.Content value="alternatives" className="space-y-4 outline-hidden">
+        <Tabs.Content value="alternatives" className="space-y-4 outline-none">
           {isLoading && alternatives.length === 0 ? (
             <div className="space-y-3 py-6">
               {[1, 2, 3].map((i) => (
@@ -186,7 +187,7 @@ export const RankingSection: React.FC<RankingSectionProps> = ({
         </Tabs.Content>
 
         {/* Tab 3: All Candidates */}
-        <Tabs.Content value="all" className="space-y-4 outline-hidden">
+        <Tabs.Content value="all" className="space-y-4 outline-none">
           {isLoading && candidates.length === 0 ? (
             <div className="space-y-2 py-6">
               {[1, 2, 3, 4, 5].map((i) => (
