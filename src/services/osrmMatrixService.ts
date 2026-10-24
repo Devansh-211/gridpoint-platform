@@ -358,3 +358,5 @@ export async function computeRoadMatrix(
     avgDetourRatio: Math.round(avgDetour * 100) / 100,
   };
 }
+
+export const fetchRoadDistanceMatrix = computeRoadMatrix;

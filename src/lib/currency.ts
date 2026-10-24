@@ -116,3 +116,12 @@ export function formatMoney(
   }
   return `${symbol}${formattedValue}`;
 }
+
+/**
+ * Converts an amount between currencies (INR <-> USD)
+ */
+export function convertCurrency(amount: number, from: Currency, to: Currency): number {
+  if (from === to) return amount;
+  if (from === 'INR' && to === 'USD') return amount / FX_INR_PER_USD;
+  return amount * FX_INR_PER_USD;
+}

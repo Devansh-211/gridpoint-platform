@@ -3,13 +3,17 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { OptimizeResponse, SiteScoreItem, Currency } from '../types';
 import { formatMoney } from '../lib/currency';
-import { Layers, Loader2 } from 'lucide-react';
+import { reverseGeocodePhoton, PhotonPlaceResult } from '../services/photonService';
+import { Layers, Loader2, MapPin, X } from 'lucide-react';
 
 interface NetworkMapProps {
   optimizeData: OptimizeResponse | null;
   candidates?: SiteScoreItem[];
   selectedPlotId?: string | null;
   onSelectSite?: (plotId: string) => void;
+  onSelectZone?: (zoneId: string) => void;
+  onMapClickAddLocation?: (place: PhotonPlaceResult) => void;
+  routingStatusBadge?: React.ReactNode;
   currency?: Currency;
 }
 
@@ -72,6 +76,9 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
   candidates = [],
   selectedPlotId = null,
   onSelectSite,
+  onSelectZone,
+  onMapClickAddLocation,
+  routingStatusBadge,
   currency = 'INR',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -98,6 +105,39 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
   const [showOsmContext, setShowOsmContext] = useState<boolean>(false);
   const [osmLoading, setOsmLoading] = useState<boolean>(false);
   const [osmStatusMsg, setOsmStatusMsg] = useState<string | null>(null);
+  const [isAddClickActive, setIsAddClickActive] = useState<boolean>(false);
+
+  // Map click handler for adding locations
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const onMapClick = async (e: L.LeafletMouseEvent) => {
+      if (!isAddClickActive) return;
+      const { lat, lng } = e.latlng;
+      setIsAddClickActive(false);
+      if (onMapClickAddLocation) {
+        const place = await reverseGeocodePhoton(lat, lng);
+        onMapClickAddLocation(place);
+      }
+    };
+
+    map.on('click', onMapClick);
+    return () => {
+      map.off('click', onMapClick);
+    };
+  }, [isAddClickActive, onMapClickAddLocation]);
+
+  // Esc key cancels map click mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isAddClickActive) {
+        setIsAddClickActive(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAddClickActive]);
 
   // Initialize Leaflet map
   useEffect(() => {
@@ -331,9 +371,28 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
           <strong style="color:#14181D;">${a.neighborhood_name}</strong> (Delivery Zone)<br>
           Daily Demand: <strong>${a.daily_orders}</strong> orders/day<br>
           Assigned Depot: <strong>${a.warehouse_name}</strong><br>
-          Distance to Depot: <strong>${a.distance_km} km</strong>
+          Distance to Depot: <strong>${a.distance_km} km</strong><br>
+          <button
+            id="popup-zone-${a.neighborhood_id}"
+            style="margin-top:6px; width:100%; padding:3px 6px; font-size:11px; font-weight:600; color:#2563EB; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:4px; cursor:pointer;"
+          >
+            Inspect Zone Demand &rarr;
+          </button>
         </div>
       `);
+
+      zMarker.on('popupopen', () => {
+        const btn = document.getElementById(`popup-zone-${a.neighborhood_id}`);
+        if (btn) {
+          btn.onclick = () => {
+            if (onSelectZone) onSelectZone(a.neighborhood_id);
+          };
+        }
+      });
+
+      zMarker.on('click', () => {
+        if (onSelectZone) onSelectZone(a.neighborhood_id);
+      });
 
       layersRef.current.zones.addLayer(zMarker);
     });
@@ -464,8 +523,35 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
   }, [showOsmContext, fetchOsmLanduse]);
 
   return (
-    <div className="relative h-[480px] w-full overflow-hidden rounded-xl border border-gp-border bg-slate-100 shadow-sm">
+    <div
+      className={`relative h-[480px] w-full overflow-hidden rounded-xl border border-gp-border bg-slate-100 shadow-sm ${
+        isAddClickActive ? 'cursor-crosshair' : ''
+      }`}
+    >
       <div ref={mapContainerRef} className="h-full w-full" />
+
+      {/* Click Map Active Banner */}
+      {isAddClickActive && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xl animate-pulse">
+          <MapPin className="h-4 w-4 shrink-0" />
+          <span>Click anywhere on the map to place a delivery zone / candidate hub • Press Esc to cancel</span>
+          <button
+            type="button"
+            onClick={() => setIsAddClickActive(false)}
+            aria-label="Cancel map click"
+            className="ml-2 rounded p-0.5 hover:bg-blue-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Top-Left Routing Status Badge */}
+      {routingStatusBadge && (
+        <div className="absolute top-3 left-3 z-[1000]">
+          {routingStatusBadge}
+        </div>
+      )}
 
       {/* Map Controls Overlay */}
       <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5 rounded-lg border border-gp-border bg-white/95 p-2.5 text-xs shadow-md backdrop-blur max-w-[210px]">
@@ -473,6 +559,21 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
           <Layers className="h-3.5 w-3.5 text-gp-primary-500" />
           <span>Network & Site Layers</span>
         </div>
+
+        {/* Click Map to Add Toolbar Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsAddClickActive((prev) => !prev)}
+          className={`flex items-center justify-center gap-1.5 w-full rounded-lg px-2.5 py-1.5 text-xs font-bold transition mb-1 ${
+            isAddClickActive
+              ? 'bg-blue-600 text-white shadow'
+              : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+          }`}
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          <span>{isAddClickActive ? 'Cancel Map Click' : '📍 Click Map to Add'}</span>
+        </button>
+
         <label className="flex items-center gap-2 cursor-pointer text-gp-text-secondary hover:text-gp-text-primary">
           <input
             type="checkbox"

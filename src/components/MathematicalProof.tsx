@@ -50,13 +50,13 @@ export const MathematicalProof: React.FC<MathematicalProofProps> = ({
           {/* Objective Function */}
           <div>
             <div className="font-bold text-gp-text-primary mb-1.5">
-              1. Objective Function ({isAutoSize ? 'Auto-Size Combined Cost Minimization' : 'Demand-Weighted Distance Minimization'})
+              1. Objective Function ({isAutoSize ? 'Auto-Size Combined Cost Minimization' : 'Capacitated Facility Location & Transit Minimization'})
             </div>
             <div className="rounded-lg border border-gp-border bg-white p-4 overflow-x-auto">
               {isAutoSize ? (
-                <BlockMath math="\min \sum_{i \in I} \sum_{j \in J} d_{ij} \cdot \left(\frac{c_{km}}{50}\right) \cdot D_i \cdot x_{ij} + \sum_{j \in J} F_j \cdot y_j" />
+                <BlockMath math="\min \sum_{j \in J} F_j \cdot y_j + \sum_{i \in I} \sum_{j \in J} \left(\frac{c_{km}}{50}\right) \cdot d_{ij} \cdot D_i \cdot x_{ij} + \sum_{i \in I_{uncovered}} P_{SLA} \cdot D_i" />
               ) : (
-                <BlockMath math="\min \sum_{i \in I} \sum_{j \in J} d_{ij} \cdot D_i \cdot x_{ij}" />
+                <BlockMath math="\min \sum_{j \in J} F_j \cdot y_j + \sum_{i \in I} \sum_{j \in J} \left(\frac{c_{km}}{50}\right) \cdot d_{ij} \cdot D_i \cdot x_{ij} + \sum_{i \in I_{uncovered}} P_{SLA} \cdot D_i" />
               )}
             </div>
           </div>
@@ -66,10 +66,10 @@ export const MathematicalProof: React.FC<MathematicalProofProps> = ({
             <div className="font-bold text-gp-text-primary mb-1.5">2. Solver Constraints</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="rounded-lg border border-gp-border bg-white p-3">
-                <div className="font-semibold text-gp-primary-700 mb-1">Single Assignment Constraint</div>
-                <BlockMath math="\sum_{j \in J} x_{ij} = 1 \quad \forall i \in I" />
+                <div className="font-semibold text-gp-primary-700 mb-1">Demand Satisfaction / Coverage</div>
+                <BlockMath math="\sum_{j \in J} x_{ij} = 1 - z_i \quad \forall i \in I" />
                 <div className="text-[11px] text-gp-text-secondary mt-1">
-                  Each delivery zone <InlineMath math="i" /> is served by exactly one warehouse depot.
+                  Demand is satisfied (<InlineMath math="z_i = 0" />) or flagged SLA breach (<InlineMath math="z_i = 1" />) if beyond service radius.
                 </div>
               </div>
 
@@ -85,11 +85,21 @@ export const MathematicalProof: React.FC<MathematicalProofProps> = ({
                 <div className="font-semibold text-gp-primary-700 mb-1">Warehouse Throughput Capacity</div>
                 <BlockMath math="\sum_{i \in I} D_i \cdot x_{ij} \le K_j \cdot y_j \quad \forall j \in J" />
                 <div className="text-[11px] text-gp-text-secondary mt-1">
-                  Total allocated orders cannot exceed site capacity limit <InlineMath math="K_j" />.
+                  Total allocated orders cannot exceed site capacity limit <InlineMath math="K_j" /> (fractional split supported when ceiling is hit).
                 </div>
               </div>
 
               <div className="rounded-lg border border-gp-border bg-white p-3">
+                <div className="font-semibold text-gp-primary-700 mb-1">
+                  SLA Maximum Delivery Radius
+                </div>
+                <BlockMath math="x_{ij} = 0 \quad \text{if } d_{ij} > R_{\max}" />
+                <div className="text-[11px] text-gp-text-secondary mt-1">
+                  Transit arcs beyond <InlineMath math="R_{\max}" /> are pruned; unreachable zones incur <InlineMath math="P_{SLA}" /> penalty.
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gp-border bg-white p-3 md:col-span-2">
                 <div className="font-semibold text-gp-primary-700 mb-1">
                   {isAutoSize ? 'Warehouse Count Ceiling' : 'Exact Warehouse Count'}
                 </div>

@@ -10,6 +10,11 @@ interface HeroProps {
   whyOpen: boolean;
   onWhyOpenChange: (open: boolean) => void;
   onAssistantClick?: () => void;
+  onResetDemo?: () => void;
+  autoReoptimize?: boolean;
+  onToggleAutoReoptimize?: () => void;
+  isStale?: boolean;
+  onManualReoptimize?: () => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
@@ -20,6 +25,11 @@ export const Hero: React.FC<HeroProps> = ({
   whyOpen,
   onWhyOpenChange,
   onAssistantClick,
+  onResetDemo,
+  autoReoptimize = true,
+  onToggleAutoReoptimize,
+  isStale = false,
+  onManualReoptimize,
 }) => {
   const comparisonItems = [
     {
@@ -87,6 +97,18 @@ export const Hero: React.FC<HeroProps> = ({
             <span>{isRunningDemo ? 'Solving Bengaluru Network...' : '⚡ Run Bengaluru Demo (36 Zones)'}</span>
           </button>
 
+          {onResetDemo && (
+            <button
+              type="button"
+              id="btnResetDemo"
+              onClick={onResetDemo}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              title="Restore original 36 zones and 20 candidate hubs"
+            >
+              <span>🔄 Reset Demo Data</span>
+            </button>
+          )}
+
           <button
             type="button"
             id="btnUploadCustom"
@@ -106,6 +128,35 @@ export const Hero: React.FC<HeroProps> = ({
             >
               <Bot className="h-4 w-4 text-blue-600" />
               <span>🤖 Logistics AI Assistant</span>
+            </button>
+          )}
+        </div>
+
+        {/* Live Auto-Reoptimize Toggle & Stale Solve Prompt */}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          {onToggleAutoReoptimize && (
+            <button
+              type="button"
+              onClick={onToggleAutoReoptimize}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition border ${
+                autoReoptimize
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                  : 'bg-slate-100 text-slate-600 border-slate-300'
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${autoReoptimize ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+              <span>⚡ Auto-Reoptimize on Data Edit: <strong>{autoReoptimize ? 'ON' : 'OFF'}</strong></span>
+            </button>
+          )}
+
+          {isStale && onManualReoptimize && (
+            <button
+              type="button"
+              onClick={onManualReoptimize}
+              className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white shadow-md hover:bg-blue-700 animate-bounce"
+            >
+              <Zap className="h-3 w-3" />
+              <span>Re-optimize Network (Edits Pending)</span>
             </button>
           )}
         </div>
