@@ -1228,25 +1228,25 @@ input[type="range"].gp-range {
   height: 48px;
   padding: 0 var(--gp-space-5);
   border-radius: var(--gp-radius-full);
-  background-color: var(--gp-primary-500);
+  background-color: #2563eb;
   color: #FFFFFF;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   font-family: var(--gp-font-family-sans);
   font-size: 13px;
   font-weight: var(--gp-weight-semibold);
   display: flex;
   align-items: center;
   gap: var(--gp-space-2);
-  box-shadow: var(--gp-shadow-lg);
+  box-shadow: 0 10px 25px -3px rgba(37, 99, 235, 0.4), 0 4px 6px -4px rgba(37, 99, 235, 0.2);
   cursor: pointer;
-  z-index: 1200;
+  z-index: 9999;
   transition: all var(--gp-transition-fast);
 }
 
 .gp-agent-fab:hover {
-  background-color: var(--gp-primary-600);
+  background-color: #1d4ed8;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px -2px rgba(59, 118, 237, 0.35);
+  box-shadow: 0 12px 28px -2px rgba(37, 99, 235, 0.5);
 }
 
 .gp-agent-fab:active {
@@ -1254,24 +1254,26 @@ input[type="range"].gp-range {
 }
 
 .gp-agent-fab.visible {
-  display: flex;
+  display: flex !important;
 }
 
 /* Agent Drawer Backdrop */
 .gp-agent-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.3);
+  background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(2px);
-  z-index: 1400;
+  z-index: 99998;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--gp-transition-normal);
+  display: none;
+  transition: opacity 220ms ease;
 }
 
 .gp-agent-backdrop.active {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  display: block !important;
 }
 
 /* Agent Slide-in Drawer (380px - 420px desktop / full sheet on mobile) */
@@ -1280,20 +1282,31 @@ input[type="range"].gp-range {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 410px;
+  width: 420px;
   max-width: 100vw;
-  background-color: var(--gp-surface);
-  border-left: 1px solid var(--gp-border);
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08);
-  z-index: 1500;
+  background-color: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.16);
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  visibility: hidden;
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1), visibility 280ms ease;
 }
 
 .gp-agent-drawer.active {
-  transform: translateX(0);
+  transform: translateX(0) !important;
+  visibility: visible !important;
+  display: flex !important;
+}
+
+.gp-nav-item#navAgentAssistant.active,
+.gp-btn-header-preset#btnHeaderAgentAssistant.active {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 /* Drawer Header */

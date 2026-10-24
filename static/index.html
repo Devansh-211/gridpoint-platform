@@ -92,7 +92,7 @@
             </div>
           </button>
 
-          <button class="gp-nav-item" id="navAgentAssistant" title="Conversational Logistics Assistant">
+          <button type="button" class="gp-nav-item" id="navAgentAssistant" title="Conversational Logistics Assistant">
             <div class="gp-nav-item-left">
               <div class="gp-nav-icon" style="color:#2563eb;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -176,6 +176,11 @@
         </div>
 
         <div class="gp-header-actions" style="display:flex; align-items:center; gap:10px;">
+          <button type="button" class="gp-btn-header-preset" id="btnHeaderAgentAssistant" title="Conversational Logistics Assistant" style="color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <span>Logistics Assistant</span>
+          </button>
+
           <button type="button" class="gp-btn-header-preset" id="btnHeaderLoadPreset" title="Load Configuration Preset">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <span>Load Preset</span>
@@ -195,7 +200,6 @@
           </div>
 
           <!-- Preserving secondary hook buttons -->
-          <button id="btnHeaderAgentAssistant" style="display:none;"></button>
           <button id="btnHeaderWhyGridPoint" style="display:none;"></button>
           <button id="btnGlobalLoadDemo" style="display:none;"></button>
         </div>
@@ -360,6 +364,7 @@
               </div>
               <div style="display:flex; gap:var(--gp-space-2);">
                 <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnDashQuickData">Input Data</button>
+                <button type="button" class="gp-btn gp-btn-secondary gp-btn-sm" id="btnDashQuickAgent" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe; font-weight:600;">💬 Logistics Assistant</button>
                 <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnDashQuickOptimize">Run Optimization</button>
               </div>
             </div>
@@ -1798,7 +1803,7 @@
   </div>
 
   <!-- Floating Action Button for Conversational Agent -->
-  <button class="gp-agent-fab" id="btnOpenAgentDrawer" title="Configure network via plain language">
+  <button type="button" class="gp-agent-fab" id="btnOpenAgentDrawer" title="Configure network via plain language">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
     </svg>
@@ -1822,7 +1827,7 @@
             <span id="agentDrawerSubtitle">Plain-Language Optimization & Explanations</span>
           </div>
         </div>
-        <button class="gp-btn gp-btn-ghost gp-btn-sm" id="btnCloseAgentDrawer" style="font-size:18px; padding:4px 8px;" title="Close Assistant">&times;</button>
+        <button type="button" class="gp-btn gp-btn-ghost gp-btn-sm" id="btnCloseAgentDrawer" style="font-size:18px; padding:4px 8px;" title="Close Assistant">&times;</button>
       </div>
 
       <!-- Mode Switcher -->

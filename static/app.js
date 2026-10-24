@@ -576,31 +576,66 @@ function applyAgentParamsToUi(params) {
   agentState.knownParams = { ...agentState.knownParams, ...params };
 }
 
-function toggleAgentDrawer(open, optionalMode = null) {
+let lastAgentToggleTime = 0;
+
+function toggleAgentDrawer(open = null, optionalMode = null) {
+  const now = Date.now();
+  if (open === null && (now - lastAgentToggleTime < 200)) {
+    return;
+  }
+  lastAgentToggleTime = now;
+
   const drawer = document.getElementById("agentDrawer");
   const backdrop = document.getElementById("agentDrawerBackdrop");
   if (!drawer || !backdrop) return;
 
-  if (open) {
-    if (optionalMode) {
-      setAgentMode(optionalMode);
-    } else {
-      // Auto-default based on page
-      if (["viewResults", "viewScenarios", "viewDisruption", "viewFleet", "viewAnalytics"].includes(appState.currentView)) {
-        setAgentMode("explain");
+  const shouldOpen = open !== null ? Boolean(open) : !drawer.classList.contains("active");
+
+  if (shouldOpen) {
+    try {
+      if (optionalMode) {
+        setAgentMode(optionalMode);
       } else {
-        setAgentMode("setup");
+        // Auto-default based on page
+        if (["viewResults", "viewScenarios", "viewDisruption", "viewFleet", "viewAnalytics"].includes(appState.currentView)) {
+          setAgentMode("explain");
+        } else {
+          setAgentMode("setup");
+        }
       }
+      syncUiToAgentParams();
+    } catch (e) {
+      console.warn("Notice updating agent parameters:", e);
     }
-    syncUiToAgentParams();
+
     drawer.classList.add("active");
     backdrop.classList.add("active");
+    drawer.style.transform = "translateX(0)";
+    drawer.style.visibility = "visible";
+    drawer.style.display = "flex";
+    backdrop.style.opacity = "1";
+    backdrop.style.pointerEvents = "auto";
+    backdrop.style.display = "block";
+
+    // Visual active indicators on trigger buttons
+    document.getElementById("navAgentAssistant")?.classList.add("active");
+    document.getElementById("btnHeaderAgentAssistant")?.classList.add("active");
+
     setTimeout(() => document.getElementById("agentInput")?.focus(), 150);
   } else {
     drawer.classList.remove("active");
     backdrop.classList.remove("active");
+    drawer.style.transform = "translateX(100%)";
+    drawer.style.visibility = "hidden";
+    backdrop.style.opacity = "0";
+    backdrop.style.pointerEvents = "none";
+    backdrop.style.display = "none";
+
+    document.getElementById("navAgentAssistant")?.classList.remove("active");
+    document.getElementById("btnHeaderAgentAssistant")?.classList.remove("active");
   }
 }
+window.toggleAgentDrawer = toggleAgentDrawer;
 
 function updateAgentFabVisibility(viewId) {
   const fab = document.getElementById("btnOpenAgentDrawer");
@@ -2968,22 +3003,47 @@ function setupEventListeners() {
   // 7.5 Conversational Logistics Agent & Explain Mode (Phases 2, 3 & 4)
   const btnOpenAgent = document.getElementById("btnOpenAgentDrawer");
   if (btnOpenAgent) {
-    btnOpenAgent.addEventListener("click", () => toggleAgentDrawer(true));
+    btnOpenAgent.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAgentDrawer();
+    });
   }
 
   const navAgentAssistant = document.getElementById("navAgentAssistant");
   if (navAgentAssistant) {
-    navAgentAssistant.addEventListener("click", () => toggleAgentDrawer(true));
+    navAgentAssistant.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAgentDrawer();
+    });
   }
 
   const btnHeaderAgentAssistant = document.getElementById("btnHeaderAgentAssistant");
   if (btnHeaderAgentAssistant) {
-    btnHeaderAgentAssistant.addEventListener("click", () => toggleAgentDrawer(true));
+    btnHeaderAgentAssistant.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAgentDrawer();
+    });
   }
 
   const btnLandingOpenAgent = document.getElementById("btnLandingOpenAgent");
   if (btnLandingOpenAgent) {
-    btnLandingOpenAgent.addEventListener("click", () => toggleAgentDrawer(true));
+    btnLandingOpenAgent.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAgentDrawer(true);
+    });
+  }
+
+  const btnDashQuickAgent = document.getElementById("btnDashQuickAgent");
+  if (btnDashQuickAgent) {
+    btnDashQuickAgent.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAgentDrawer(true);
+    });
   }
 
   document.addEventListener("keydown", (e) => {
@@ -2994,12 +3054,20 @@ function setupEventListeners() {
 
   const btnCloseAgent = document.getElementById("btnCloseAgentDrawer");
   if (btnCloseAgent) {
-    btnCloseAgent.addEventListener("click", () => toggleAgentDrawer(false));
+    btnCloseAgent.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAgentDrawer(false);
+    });
   }
 
   const backdropAgent = document.getElementById("agentDrawerBackdrop");
   if (backdropAgent) {
-    backdropAgent.addEventListener("click", () => toggleAgentDrawer(false));
+    backdropAgent.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAgentDrawer(false);
+    });
   }
 
   // Drawer Mode Switcher Buttons
