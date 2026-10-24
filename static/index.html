@@ -16,151 +16,123 @@
     <aside class="gp-left-rail">
       
       <!-- Brand Logo Box -->
-      <div class="gp-brand-box" id="brandHomeBtn" title="Return to Overview">
-        <div class="gp-brand-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      <div class="gp-brand-box" id="brandHomeBtn" title="Return to Overview" style="height:60px; padding:0 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #f1f5f9; cursor:pointer;">
+        <div class="gp-brand-icon" style="background:#0f172a; border-radius:8px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(15,23,42,0.15); flex-shrink:0;">
+          <!-- Multi-layered brand icon: grid of shapes -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="7" height="7" rx="2" fill="#2563EB"/>
+            <rect x="14" y="3" width="7" height="7" rx="2" fill="#FFFFFF" fill-opacity="0.9"/>
+            <rect x="3" y="14" width="7" height="7" rx="2" fill="#FFFFFF" fill-opacity="0.9"/>
+            <rect x="14" y="14" width="7" height="7" rx="2" fill="#2563EB"/>
           </svg>
         </div>
         <div class="gp-brand-info">
-          <h1>GRIDPOINT</h1>
-          <span>Network Optimization</span>
+          <h1 style="font-size:14.5px; font-weight:800; letter-spacing:0.04em; color:#0f172a; line-height:1.2;">GRIDPOINT</h1>
+          <span style="font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#64748b; text-transform:uppercase;">Logistics Intelligence</span>
         </div>
       </div>
 
       <!-- Navigation Groups -->
-      <div class="gp-nav-list">
+      <div class="gp-nav-list" style="padding:16px 12px; flex:1; display:flex; flex-direction:column; gap:16px;">
         
-        <!-- 1. SETUP GROUP -->
-        <div class="gp-nav-group">
-          <div class="gp-nav-title">Setup</div>
+        <div class="gp-nav-group" style="display:flex; flex-direction:column; gap:4px;">
+          <div class="gp-nav-title" style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; color:#94a3b8; text-transform:uppercase; padding:0 10px 6px 10px;">Core Workspace</div>
           
-          <button class="gp-nav-item active" data-view="viewLanding">
-            <div class="gp-nav-item-left">
-              <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-              </div>
-              <span>Landing & Entry</span>
-            </div>
-          </button>
-
           <button class="gp-nav-item" data-view="viewDashboard">
             <div class="gp-nav-item-left">
               <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
               </div>
-              <span>Dashboard Overview</span>
+              <span>Overview</span>
             </div>
           </button>
 
-          <button class="gp-nav-item" data-view="viewData">
+          <button class="gp-nav-item active" data-view="viewData">
             <div class="gp-nav-item-left">
               <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
               </div>
-              <span>Demand Data Input</span>
+              <span>Demand Map</span>
             </div>
           </button>
 
           <button class="gp-nav-item" data-view="viewConfig">
             <div class="gp-nav-item-left">
               <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
               </div>
               <span>Network Configuration</span>
             </div>
           </button>
 
-          <button class="gp-nav-item" id="navAgentAssistant" title="Conversational Logistics Assistant">
-            <div class="gp-nav-item-left">
-              <div class="gp-nav-icon" style="color:var(--gp-primary-600);">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-              </div>
-              <span>Logistics Assistant</span>
-            </div>
-            <span class="gp-badge gp-badge-estimate" style="font-size:9.5px; background:var(--gp-primary-50); color:var(--gp-primary-700); border-color:var(--gp-primary-200);">AI</span>
-          </button>
-        </div>
-
-        <!-- 2. RESULTS & ANALYSIS GROUP -->
-        <div class="gp-nav-group">
-          <div class="gp-nav-title">Results & Solvers</div>
-          
           <button class="gp-nav-item" data-view="viewResults" id="navResults">
             <div class="gp-nav-item-left">
               <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
               </div>
-              <span>Optimization Results</span>
+              <span>Optimization & Solvers</span>
             </div>
-            <span class="gp-badge gp-badge-optimal" style="font-size:10px;">CFLP</span>
           </button>
 
           <button class="gp-nav-item" data-view="viewScenarios" id="navScenarios">
             <div class="gp-nav-item-left">
               <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31a2 2 0 0 1-.58 1.41L4.7 15.44a5 5 0 0 0 3.54 8.56h7.52a5 5 0 0 0 3.54-8.56l-4.72-4.72a2 2 0 0 1-.58-1.41V2"></path><line x1="8.5" y1="2" x2="15.5" y2="2"></line></svg>
               </div>
-              <span>Scenario Lab (What-If)</span>
-            </div>
-          </button>
-
-          <button class="gp-nav-item" data-view="viewDisruption" id="navDisruption">
-            <div class="gp-nav-item-left">
-              <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              </div>
-              <span>Disruption & Resilience</span>
+              <span>Scenario Lab</span>
             </div>
           </button>
 
           <button class="gp-nav-item" data-view="viewFleet" id="navFleet">
             <div class="gp-nav-item-left">
               <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
               </div>
-              <span>Tactical Fleet (CVRP)</span>
+              <span>Tactical Fleet</span>
             </div>
-            <span class="gp-badge gp-badge-estimate" style="font-size:10px;">OR-Tools</span>
+          </button>
+
+          <button class="gp-nav-item" id="navAgentAssistant" title="Conversational Logistics Assistant">
+            <div class="gp-nav-item-left">
+              <div class="gp-nav-icon" style="color:#2563eb;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+              <span>Logistics Assistant</span>
+            </div>
+            <span class="gp-badge gp-badge-estimate" style="font-size:9.5px; background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">AI</span>
           </button>
         </div>
 
-        <!-- 3. REFERENCE GROUP -->
-        <div class="gp-nav-group">
-          <div class="gp-nav-title">Reference</div>
-          
-          <button class="gp-nav-item" data-view="viewAnalytics">
-            <div class="gp-nav-item-left">
-              <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-              </div>
-              <span>Analytics & Trade-off</span>
-            </div>
-          </button>
-
-          <button class="gp-nav-item" data-view="viewMethodology">
-            <div class="gp-nav-item-left">
-              <div class="gp-nav-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-              </div>
-              <span>Methodology & About</span>
-            </div>
-          </button>
+        <!-- Hidden hooks for other views to ensure zero regressions -->
+        <div style="display:none;">
+          <button class="gp-nav-item" data-view="viewLanding"></button>
+          <button class="gp-nav-item" data-view="viewDisruption" id="navDisruption"></button>
+          <button class="gp-nav-item" data-view="viewAnalytics"></button>
+          <button class="gp-nav-item" data-view="viewMethodology"></button>
         </div>
 
       </div>
 
       <!-- Rail Footer -->
-      <div class="gp-rail-footer">
-        <div class="gp-session-status">
-          <div class="gp-status-dot"></div>
-          <span id="railSessionStatus">Session Active</span>
+      <div class="gp-rail-footer" style="padding:14px 12px; background:#ffffff; border-top:1px solid #f1f5f9; display:flex; flex-direction:column; gap:8px;">
+        <button type="button" class="gp-nav-item" style="padding:6px 10px; color:#64748b; font-weight:500;">
+          <div class="gp-nav-item-left">
+            <div class="gp-nav-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
+            <span>Settings</span>
+          </div>
+        </button>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:7px 10px; display:flex; align-items:center; justify-content:space-between; font-size:11.5px;">
+          <div style="display:flex; align-items:center; gap:6px; color:#475569; font-weight:500;">
+            <span class="gp-status-dot-emerald"></span>
+            <span>Cloud Engine v4.2</span>
+          </div>
+          <span style="font-family:var(--gp-font-family-mono); color:#64748b; font-size:10.5px; font-weight:600;">99.98%</span>
         </div>
-        <div class="gp-session-meta" id="railSessionMeta">Dataset: 36 zones loaded</div>
+        <div id="railSessionStatus" style="display:none;"></div>
+        <div id="railSessionMeta" style="display:none;"></div>
       </div>
 
     </aside>
@@ -170,21 +142,24 @@
       
       <!-- Top App Header -->
       <header class="gp-header">
-        <div class="gp-header-left">
-          <span class="gp-breadcrumb" id="headerBreadcrumb">Setup / Entry</span>
-          <span style="color:var(--gp-border-strong);">/</span>
-          <h2 class="gp-screen-title" id="headerScreenTitle">Landing & Entry</h2>
-          <span class="gp-badge gp-badge-synthetic" id="headerSyntheticBadge" style="display:none; margin-left:var(--gp-space-2);">[Real Locations, Synthetic Demand]</span>
-        </div>
-
-        <div class="gp-header-actions">
-          <div class="gp-solver-status-chip" id="chipSolverStatus" title="CBC Branch & Cut Solver Active (0.00% MIP gap)">
-            <span class="gp-status-dot"></span>
-            <span id="textSolverStatus">Solver: CBC Active • <span id="headerLatency">—</span></span>
+        <div class="gp-header-left" style="display:flex; align-items:center; gap:8px;">
+          <!-- Segmented Soft-Blue Pills -->
+          <div class="gp-header-pill" id="headerCityPill">
+            <span>📍</span>
+            <span style="font-weight:600;" id="headerCityPillText">Bengaluru Metro</span>
           </div>
 
-          <!-- Currency Toggle: Segmented Pill immediately right of solver status badge -->
-          <div class="gp-currency-pill-group" role="radiogroup" aria-label="Currency display selector" id="headerCurrencyPillGroup">
+          <div class="gp-header-pill" id="headerZonesPill">
+            <span id="headerZonesPillText">36 Delivery Zones</span>
+          </div>
+
+          <div class="gp-header-pill" id="headerSolverPill">
+            <span class="gp-status-dot-emerald"></span>
+            <span id="headerSolverPillText">Solver: <strong>CBC Online</strong></span>
+          </div>
+
+          <!-- Currency Toggle: Segmented Pill -->
+          <div class="gp-currency-pill-group" role="radiogroup" aria-label="Currency display selector" id="headerCurrencyPillGroup" style="margin-left:4px;">
             <button type="button" role="radio" aria-checked="true" class="gp-currency-pill-btn active" id="btnCurrINR" data-curr="INR" title="Indian Rupee (Canonical storage)">
               <span>₹</span> <span>INR</span>
             </button>
@@ -193,22 +168,36 @@
             </button>
           </div>
 
-          <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnHeaderAgentAssistant" style="border-color:var(--gp-primary-300); color:var(--gp-primary-700); background:var(--gp-primary-50);" title="Open Conversational Logistics Assistant">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-            <span>Logistics Assistant</span>
+          <!-- Preserving hidden metadata hooks for appState updates -->
+          <span class="gp-breadcrumb" id="headerBreadcrumb" style="display:none;">Setup / Entry</span>
+          <h2 class="gp-screen-title" id="headerScreenTitle" style="display:none;">Demand Map</h2>
+          <span class="gp-badge gp-badge-synthetic" id="headerSyntheticBadge" style="display:none;">[Real Locations, Synthetic Demand]</span>
+          <span id="chipSolverStatus" style="display:none;"><span id="textSolverStatus"></span><span id="headerLatency"></span></span>
+        </div>
+
+        <div class="gp-header-actions" style="display:flex; align-items:center; gap:10px;">
+          <button type="button" class="gp-btn-header-preset" id="btnHeaderLoadPreset" title="Load Configuration Preset">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span>Load Preset</span>
           </button>
 
-          <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnHeaderWhyGridPoint" style="border-color:var(--gp-primary-200); color:var(--gp-primary-700); background:var(--gp-primary-50);" title="Compare GridPoint against traditional tools">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            <span>Why GridPoint?</span>
+          <button type="button" class="gp-btn-header-optimize" id="btnGlobalOptimize" title="Execute Mixed-Integer Linear Program">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>Run Optimizer</span>
           </button>
 
-          <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnGlobalLoadDemo" title="Load Curated 36-Zone Bengaluru Dataset">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-            <span>Load Demo</span>
+          <button type="button" class="gp-btn-icon-header" id="btnHeaderNotifications" title="System Notifications">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
           </button>
+
+          <div class="gp-avatar-circle" id="btnHeaderProfile" title="User Profile: Lead Logistics Architect">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+
+          <!-- Preserving secondary hook buttons -->
+          <button id="btnHeaderAgentAssistant" style="display:none;"></button>
+          <button id="btnHeaderWhyGridPoint" style="display:none;"></button>
+          <button id="btnGlobalLoadDemo" style="display:none;"></button>
         </div>
       </header>
 
@@ -458,73 +447,250 @@
           <!-- ================================================================
                SCREEN 3: DATA INPUT
                ================================================================ -->
+          <!-- ================================================================
+               SCREEN 3: DEMAND MAP & ZONE INSPECTOR (image_1.png)
+               ================================================================ -->
           <section class="gp-view" id="viewData">
             
-            <div class="gp-card">
-              <div class="gp-card-header">
-                <div>
-                  <div class="gp-card-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    <span>Delivery Zone Ingestion & Validation</span>
-                  </div>
-                  <div class="gp-card-subtitle">Upload CSV, inspect active zones, or paste manual dataset.</div>
+            <!-- 1. Hero KPI Grid (4 Stat Cards) -->
+            <div class="gp-hero-kpi-grid">
+              
+              <!-- Card 1: Total Order Volume -->
+              <div class="gp-hero-kpi-card">
+                <div class="gp-hero-kpi-head">
+                  <span>TOTAL ORDER VOLUME</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <div class="gp-hero-kpi-val tabular-nums">
+                  <span id="mapKpiTotalOrders">10,240</span>
+                  <span class="gp-hero-kpi-unit">ord/day</span>
+                </div>
+                <div class="gp-hero-kpi-sub positive" id="mapKpiSurgeDelta">
+                  <span style="font-size:10px;">●</span> +6.4% baseline surge
+                </div>
+              </div>
+
+              <!-- Card 2: Peak Demand Zone -->
+              <div class="gp-hero-kpi-card">
+                <div class="gp-hero-kpi-head">
+                  <span>PEAK DEMAND ZONE</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"></path></svg>
+                </div>
+                <div class="gp-hero-kpi-val" id="mapKpiPeakZoneName" style="font-size:20px; font-weight:700;">
+                  Koramangala
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                  <span class="gp-hero-kpi-unit" id="mapKpiPeakZoneOrders" style="color:var(--gp-text-secondary); font-size:12px;">420 ord/day</span>
+                  <span class="gp-badge gp-badge-danger" style="font-size:10px; font-weight:700; padding:2px 7px; background:#fef2f2; color:#ef4444; border:none; border-radius:4px;">High Load</span>
+                </div>
+              </div>
+
+              <!-- Card 3: Average Hub Radius -->
+              <div class="gp-hero-kpi-card">
+                <div class="gp-hero-kpi-head">
+                  <span>AVERAGE HUB RADIUS</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                </div>
+                <div class="gp-hero-kpi-val tabular-nums">
+                  <span id="mapKpiAvgRadius">4.8</span>
+                  <span class="gp-hero-kpi-unit">km</span>
+                </div>
+                <div class="gp-hero-kpi-sub" style="color:var(--gp-text-tertiary);">
+                  <span style="font-size:10px;">●</span> &lt; 18m SLA target
+                </div>
+              </div>
+
+              <!-- Card 4: Active Layer Overlays -->
+              <div class="gp-hero-kpi-card">
+                <div class="gp-hero-kpi-head">
+                  <span>ACTIVE LAYER OVERLAYS</span>
+                  <span style="font-size:11px; font-weight:600; color:#2563eb; cursor:pointer;" id="linkLayerSummary">4 of 4 Active</span>
+                </div>
+                <div class="gp-layer-checkbox-grid">
+                  <label class="gp-layer-check-label"><input type="checkbox" id="layerChkHeatmap" checked> <span>Heatmap</span></label>
+                  <label class="gp-layer-check-label"><input type="checkbox" id="layerChkCentroids" checked> <span>Centroids</span></label>
+                  <label class="gp-layer-check-label"><input type="checkbox" id="layerChkVoronoi" checked> <span>Voronoi</span></label>
+                  <label class="gp-layer-check-label"><input type="checkbox" id="layerChkCandidates" checked> <span>Candidates</span></label>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 2. Live Map + Zone Inspector Layout -->
+            <div class="gp-map-inspector-layout">
+              
+              <!-- Map Container (~72% width) -->
+              <div class="gp-map-viewport-box">
+                <!-- Floating Coordinates Pill (Top Left) -->
+                <div class="gp-map-overlay-badge-topleft">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                  <span id="lblMapCoords">12.9716° N, 77.5946° E</span>
+                  <span style="color:#cbd5e1; margin:0 2px;">|</span>
+                  <span style="font-size:10px; color:#64748b; font-weight:700;">SCALE 1:50,000</span>
                 </div>
 
-                <div style="display:flex; gap:var(--gp-space-2); align-items:center;">
-                  <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnDataAIGenerate" style="border-color:var(--gp-primary-200); color:var(--gp-primary-600); background:var(--gp-primary-50);" title="Consent-Gated AI Synthetic Demand Generation">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
-                    <span>Generate with AI</span>
-                    <span class="gp-badge gp-badge-estimate" style="font-size:9px; padding:1px 4px;">[Opt-In]</span>
+                <!-- Floating Zoom Controls (Top Right) -->
+                <div class="gp-map-zoom-controls-topright">
+                  <button type="button" id="btnMapZoomIn" title="Zoom In">+</button>
+                  <button type="button" id="btnMapZoomOut" title="Zoom Out">−</button>
+                  <button type="button" id="btnMapResetView" title="Reset Frame">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
                   </button>
-                  <label class="gp-btn gp-btn-secondary gp-btn-sm" style="margin:0; cursor:pointer;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </div>
+
+                <!-- Map Element -->
+                <div id="demandMap" style="width:100%; height:460px; border-radius:12px;"></div>
+
+                <!-- Floating Legend Pill (Bottom) -->
+                <div class="gp-map-legend-bottom">
+                  <div class="gp-map-legend-item">
+                    <span class="gp-legend-dot-dark"></span>
+                    <span>High Demand (&gt;350)</span>
+                  </div>
+                  <div class="gp-map-legend-item">
+                    <span class="gp-legend-dot-med"></span>
+                    <span>Medium Demand (200-350)</span>
+                  </div>
+                  <div class="gp-map-legend-item">
+                    <span class="gp-legend-dot-light"></span>
+                    <span>Moderate (&lt;200)</span>
+                  </div>
+                  <div class="gp-map-legend-item">
+                    <span class="gp-legend-line-voronoi"></span>
+                    <span>Voronoi Partition</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Zone Inspector Drawer (~28% width) -->
+              <div class="gp-zone-inspector">
+                <div class="gp-zone-inspector-head">
+                  <div class="gp-zone-inspector-title">
+                    <span class="gp-inspector-dot">●</span>
+                    <span>ZONE INSPECTOR</span>
+                  </div>
+                  <span class="gp-zone-tag-badge" id="inspZoneBadge">ZN-BLR-04</span>
+                </div>
+
+                <div class="gp-zone-inspector-body">
+                  <div class="gp-zone-name" id="inspZoneTitle">Koramangala Sector 4</div>
+                  <div class="gp-zone-desc" id="inspZoneDesc">High-density commercial-residential corridor with multiple fast-turnover micro-fulfillment micro-hubs.</div>
+
+                  <div class="gp-zone-kv-table">
+                    <div class="gp-zone-kv-row">
+                      <span class="gp-zone-kv-key">Daily Demand</span>
+                      <span class="gp-zone-kv-val tabular-nums" id="inspZoneDemand">420 ord/day</span>
+                    </div>
+                    <div class="gp-zone-kv-row">
+                      <span class="gp-zone-kv-key">Assigned Hub</span>
+                      <span class="gp-zone-kv-val-link" id="inspZoneHub">Koramangala Central</span>
+                    </div>
+                    <div class="gp-zone-kv-row">
+                      <span class="gp-zone-kv-key">Haversine Distance</span>
+                      <span class="gp-zone-kv-val tabular-nums" id="inspZoneDistance">2.1 km</span>
+                    </div>
+                    <div class="gp-zone-kv-row">
+                      <span class="gp-zone-kv-key">Road Detour Factor</span>
+                      <span class="gp-zone-kv-val tabular-nums" id="inspZoneDetour">1.33x (2.8 km road)</span>
+                    </div>
+                    <div class="gp-zone-kv-row">
+                      <span class="gp-zone-kv-key">Gravitational Pull</span>
+                      <span class="gp-badge gp-badge-danger" id="inspZoneGravBadge" style="font-size:10px; font-weight:700; padding:2px 6px; background:#fef2f2; color:#ef4444; border:none; border-radius:4px;">High (0.91)</span>
+                    </div>
+                  </div>
+
+                  <!-- Intraday Profile Mini Bar Chart -->
+                  <div class="gp-intraday-head">
+                    <span>INTRADAY PROFILE</span>
+                    <span style="font-size:10px; color:#64748b;" id="inspPeakTime">Peak @ 19:30</span>
+                  </div>
+                  <div class="gp-intraday-bars" id="inspIntradayBars">
+                    <div class="gp-intraday-bar" style="height:28%;"></div>
+                    <div class="gp-intraday-bar" style="height:42%;"></div>
+                    <div class="gp-intraday-bar" style="height:60%;"></div>
+                    <div class="gp-intraday-bar" style="height:50%;"></div>
+                    <div class="gp-intraday-bar" style="height:55%;"></div>
+                    <div class="gp-intraday-bar peak" style="height:90%;"></div>
+                    <div class="gp-intraday-bar peak" style="height:100%;"></div>
+                    <div class="gp-intraday-bar peak" style="height:78%;"></div>
+                    <div class="gp-intraday-bar" style="height:45%;"></div>
+                    <div class="gp-intraday-bar" style="height:35%;"></div>
+                    <div class="gp-intraday-bar" style="height:20%;"></div>
+                  </div>
+                  <div class="gp-intraday-labels">
+                    <span>08:00</span>
+                    <span>14:00</span>
+                    <span>20:00</span>
+                    <span>23:00</span>
+                  </div>
+
+                  <button type="button" class="gp-btn-reassign-hub" id="btnReassignHub">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    <span>Reassign Zone Hub</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 3. Zone Demand Breakdown Table -->
+            <div class="gp-demand-table-card">
+              <div class="gp-demand-table-header">
+                <div class="gp-demand-table-title-wrap">
+                  <h3>Zone Demand Breakdown</h3>
+                  <span class="gp-showing-pill" id="lblTableZoneCount">Showing 6 of 36 zones</span>
+                </div>
+                <div class="gp-demand-table-actions">
+                  <div class="gp-table-search-box">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="inputFilterNeighborhoods" placeholder="Filter by neighborhood...">
+                  </div>
+                  <button type="button" class="gp-btn-export-csv" id="btnExportDemandCsv">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Export CSV</span>
+                  </button>
+                  <label class="gp-btn-export-csv" style="cursor:pointer;" title="Upload custom CSV">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     <span>Upload CSV</span>
                     <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
                   </label>
-                  <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnDataRawJson">Raw JSON</button>
-                  <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnDataLoadDemo">Load Bengaluru Demo</button>
+                  <!-- Compatibility hooks -->
+                  <button type="button" id="btnDataLoadDemo" style="display:none;">Demo</button>
+                  <button type="button" id="btnDataAIGenerate" style="display:none;"></button>
+                  <button type="button" id="btnDataRawJson" style="display:none;"></button>
                 </div>
               </div>
 
               <!-- Validation Feedback Container -->
-              <div id="dataValidationFeedback" style="padding:var(--gp-space-4) var(--gp-space-5); display:none;"></div>
+              <div id="dataValidationFeedback" style="padding:0 20px 10px 20px; display:none;"></div>
 
-              <div class="gp-card-body" style="padding-top:0;">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:var(--gp-space-4);">
-                  
-                  <!-- Zone Table -->
-                  <div class="gp-table-wrapper" style="max-height: 480px;">
-                    <table class="gp-table" id="tableNeighborhoods">
-                      <thead>
-                        <tr>
-                          <th>Zone ID</th>
-                          <th>Neighborhood Name</th>
-                          <th>Daily Orders</th>
-                          <th>Coordinates</th>
-                        </tr>
-                      </thead>
-                      <tbody id="tbodyNeighborhoods">
-                        <tr><td colspan="4" style="text-align:center; color:var(--gp-text-tertiary); padding:20px;">No zones loaded. Click "Load Bengaluru Demo" or upload CSV.</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
+              <div style="overflow-x:auto;">
+                <table class="gp-table-breakdown" id="tableNeighborhoods">
+                  <thead>
+                    <tr>
+                      <th>ZONE ID</th>
+                      <th>NEIGHBORHOOD &amp; CENTROID</th>
+                      <th>DAILY ORDERS</th>
+                      <th>ASSIGNED HUB</th>
+                      <th>TRANSIT DISTANCE</th>
+                      <th>DELIVERY SLA</th>
+                      <th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyNeighborhoods">
+                    <!-- Populated dynamically via app.js -->
+                  </tbody>
+                </table>
+              </div>
 
-                  <!-- Demand Map Container -->
-                  <div class="gp-map-wrapper">
-                    <div id="demandMap" class="gp-map-element"></div>
-                    <div class="gp-map-legend">
-                      <div style="font-weight:700; font-size:11px; text-transform:uppercase; color:var(--gp-text-tertiary);">Demand Map Legend</div>
-                      <div class="gp-legend-item">
-                        <span style="width:10px; height:10px; border-radius:50%; background:#3B82F6; display:inline-block;"></span>
-                        <span>Delivery Zone (Scaled by Orders)</span>
-                      </div>
-                      <div class="gp-legend-item">
-                        <span style="width:8px; height:8px; border-radius:50%; background:#94A3B8; display:inline-block;"></span>
-                        <span>Candidate Facility Site</span>
-                      </div>
-                    </div>
-                  </div>
-
+              <div class="gp-table-pagination-footer">
+                <div class="gp-table-cluster-note">
+                  Displaying nodes aggregated via DBSCAN clustering (epsilon: 1.2km, min_samples: 12)
+                </div>
+                <div class="gp-table-page-nav">
+                  <button type="button" class="gp-page-btn" id="btnTablePrev" aria-label="Previous Page">&lt;</button>
+                  <span class="gp-page-info" id="lblTablePage">1 of 6</span>
+                  <button type="button" class="gp-page-btn" id="btnTableNext" aria-label="Next Page">&gt;</button>
                 </div>
               </div>
             </div>
@@ -534,150 +700,497 @@
           <!-- ================================================================
                SCREEN 4: NETWORK CONFIGURATION
                ================================================================ -->
+          <!-- ================================================================
+               SCREEN 4: NETWORK CONFIGURATION (image_0.png)
+               ================================================================ -->
           <section class="gp-view" id="viewConfig">
             
-            <div class="gp-form-grid">
-              
-              <!-- Card 1: Facility Parameters & Mode -->
-              <div class="gp-card">
-                <div class="gp-card-header">
-                  <div class="gp-card-title">1. Strategic Facility Parameters</div>
+            <!-- Sub-Header Strip -->
+            <div class="gp-config-subhead">
+              <div class="gp-config-subhead-left">
+                <div class="gp-config-track-breadcrumb">
+                  <span>SOLVERS</span> / <span class="active">CFLP MATRIX V4.2</span> / <span>MIP-BC-69</span>
                 </div>
-                <div class="gp-card-body" style="display:flex; flex-direction:column; gap:var(--gp-space-4);">
-                  
-                  <!-- Mode Switcher -->
-                  <div>
-                    <div class="gp-label" style="margin-bottom:var(--gp-space-1);">Optimization Mode:</div>
-                    <div class="gp-mode-toggle" id="configModeToggle">
-                      <button type="button" class="gp-mode-btn active" id="btnConfigModeManual" data-mode="manual">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        <span>Manual (Exact Count)</span>
-                      </button>
-                      <button type="button" class="gp-mode-btn" id="btnConfigModeAuto" data-mode="auto">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
-                        <span>Auto-Size (Minimize Cost)</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Manual Mode: Exact Count (p) -->
-                  <div class="gp-form-group" id="containerManualP">
-                    <div class="gp-label">
-                      <span>Warehouse Count (p)</span>
-                      <span class="gp-label-val" id="valConfigP">3 sites</span>
-                    </div>
-                    <input type="range" class="gp-range" id="inputConfigP" min="1" max="20" value="3" step="1">
-                    <div style="font-size:11px; color:var(--gp-text-tertiary); margin-top:2px;">Solver selects locations and assignments for exactly this number of facilities.</div>
-                  </div>
-
-                  <!-- Auto-Size Mode: Upper Ceiling (p_max) -->
-                  <div class="gp-form-group" id="containerAutoPMax" style="display:none;">
-                    <div class="gp-label">
-                      <div style="display:flex; align-items:center; gap:var(--gp-space-2);">
-                        <span>Max Warehouses to Consider (p_max)</span>
-                        <span class="gp-badge gp-badge-estimate" id="badgeAutoMinP" style="font-size:10px;">Min: 3 sites</span>
-                      </div>
-                      <span class="gp-label-val" id="valConfigPMax">6 sites</span>
-                    </div>
-                    <input type="range" class="gp-range" id="inputConfigPMax" min="1" max="20" value="6" step="1">
-                    <div style="font-size:11px; color:var(--gp-text-tertiary); margin-top:2px;">Upper ceiling for the solver. The solver tests counts between minimum required and p_max.</div>
-                    
-                    <div style="background:var(--gp-surface-sunken); border:1px solid var(--gp-primary-200, #BFDBFE); border-radius:var(--gp-radius-sm); padding:10px 12px; margin-top:6px; font-size:12px; color:var(--gp-text-secondary); line-height:1.4;">
-                      <div style="font-weight:700; color:var(--gp-primary-600); margin-bottom:2px;">⚡ Automated Cost-Minimizing Optimizer</div>
-                      Evaluating configurations up to <strong id="autoCeilingNote">6</strong> sites to minimize <strong id="autoCostSummaryNote">Daily Transit Cost (₹/km) + Facility Leases (₹/site)</strong>.
-                    </div>
-                  </div>
-
-                  <div class="gp-form-group">
-                    <div class="gp-label">
-                      <span>Per-Warehouse Capacity Ceiling</span>
-                      <span class="gp-label-val" id="valConfigCap">4,000 orders/day</span>
-                    </div>
-                    <input type="number" class="gp-input" id="inputConfigCap" value="4000" min="500" max="25000" step="250">
-                  </div>
-
-                  <div class="gp-form-group">
-                    <div class="gp-label">
-                      <span>Max Service Radius R_max (km)</span>
-                      <span class="gp-label-val" id="valConfigRadius">No Limit</span>
-                    </div>
-                    <input type="number" class="gp-input" id="inputConfigRadius" placeholder="Optional limit (e.g. 25)" min="5" max="100" step="1">
-                  </div>
-                </div>
+                <h2>Network Configuration &amp; Constraints</h2>
+                <p>Configure Capacitated Facility Location (CFLP) constraints, priority weights, and cost models.</p>
               </div>
 
-              <!-- Card 2: Optimization Priority Presets -->
-              <div class="gp-card">
-                <div class="gp-card-header">
-                  <div class="gp-card-title">2. Optimization Priority Presets</div>
-                </div>
-                <div class="gp-card-body" style="display:flex; flex-direction:column; gap:var(--gp-space-3);">
-                  <p style="font-size:13px; color:var(--gp-text-secondary);">Select strategic weighting preference over solver objective weights:</p>
-                  
-                  <div class="gp-preset-grid">
-                    <div class="gp-preset-pill active" data-preset="cost">
-                      <div style="font-weight:700;">Cost Focus</div>
-                      <div style="font-size:11px; opacity:0.8;">Standard ₹/km</div>
-                    </div>
-                    <div class="gp-preset-pill" data-preset="speed">
-                      <div style="font-weight:700;">Speed / Radius</div>
-                      <div style="font-size:11px; opacity:0.8;">Proximity bounds</div>
-                    </div>
-                    <div class="gp-preset-pill" data-preset="sustainability">
-                      <div style="font-weight:700;">Green (CO₂)</div>
-                      <div style="font-size:11px; opacity:0.8;">Carbon penalty</div>
-                    </div>
-                  </div>
-
-                  <div style="margin-top:var(--gp-space-2);">
-                    <div class="gp-label" style="margin-bottom:var(--gp-space-1);">Distance Mode:</div>
-                    <select class="gp-select" id="selectDistanceMode" style="width:100%;">
-                      <option value="haversine" selected>Geographic Delivery Distance (Haversine Straight-Line)</option>
-                      <option value="road_detour">Road Detour (1.35x Empirical Road Proxy)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Card 3: Cost Model Assumptions -->
-              <div class="gp-card">
-                <div class="gp-card-header">
-                  <div class="gp-card-title">3. Delivery Cost Assumptions</div>
-                </div>
-                <div class="gp-card-body" style="display:flex; flex-direction:column; gap:var(--gp-space-3);">
-                  <div class="gp-form-group">
-                    <div class="gp-label" id="lblCostKm">Delivery Cost per km (₹)</div>
-                    <input type="number" class="gp-input" id="inputCostKm" value="35" min="0.1" max="5000" step="1">
-                  </div>
-
-                  <div class="gp-form-group">
-                    <div class="gp-label" id="lblFixedCost">Fixed Warehouse Lease (₹/site/day)</div>
-                    <input type="number" class="gp-input" id="inputFixedCost" value="15000" min="0" max="500000" step="500">
-                  </div>
-
-                  <div class="gp-form-group">
-                    <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-size:13px; font-weight:600; color:var(--gp-text-secondary); margin-top:4px;">
-                      <span>Refine with Tactical CVRP</span>
-                      <input type="checkbox" id="chkIncludeCvrp" style="accent-color:var(--gp-primary-500); transform:scale(1.2);">
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Live Plain-Language Summary Box & CTA -->
-            <div class="gp-card gp-card-body" style="background:var(--gp-surface-sunken); border-color:var(--gp-primary-100);">
-              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--gp-space-4);">
-                <div id="configLiveSummaryText" style="font-size:13px; color:var(--gp-text-secondary);">
-                  You are planning a <strong>3-warehouse</strong> network serving <strong>36 delivery zones</strong> with <strong>12,000 orders/day</strong> combined capacity.
-                </div>
-                <button class="gp-btn gp-btn-primary gp-btn-lg" id="btnConfigRunOptimization">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                  <span>Run Network Optimization</span>
+              <div class="gp-config-actions-right">
+                <button type="button" class="gp-btn-config-action" id="btnConfigResetDefaults">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                  <span>Reset to Defaults</span>
+                </button>
+                <button type="button" class="gp-btn-config-save" id="btnConfigSavePreset">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  <span>Save Preset</span>
+                </button>
+                <button type="button" class="gp-btn-config-branchcut" id="btnConfigRunOptimization">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  <span>Run Branch-and-Cut Solver</span>
                 </button>
               </div>
             </div>
+
+            <!-- 2-Column Main Layout -->
+            <div class="gp-config-grid">
+              
+              <!-- LEFT COLUMN (~62% width) -->
+              <div class="gp-config-col-left">
+                
+                <!-- Card 1: Optimization Sizing Mode -->
+                <div class="gp-config-card">
+                  <div class="gp-config-card-head">
+                    <div class="gp-config-card-head-left">
+                      <div class="gp-config-icon-box">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                      </div>
+                      <div>
+                        <div class="gp-config-card-title">Optimization Sizing Mode</div>
+                        <div class="gp-config-card-sub">Determine how the MIP solver bounds facility activation nodes</div>
+                      </div>
+                    </div>
+                    <span class="gp-tag-math-bounds">p &isin; {1..6}</span>
+                  </div>
+
+                  <!-- Mode Switcher Buttons -->
+                  <div class="gp-sizing-pills" id="configModeToggle">
+                    <button type="button" class="gp-sizing-pill active" id="btnConfigModeManual" data-mode="manual">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                      <span>Exact Count (p)</span>
+                    </button>
+                    <button type="button" class="gp-sizing-pill" id="btnConfigModeAuto" data-mode="auto">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                      <span>Auto-Size (Min Total Cost)</span>
+                    </button>
+                  </div>
+
+                  <!-- Manual Mode Section -->
+                  <div class="gp-active-constraint-box" id="containerManualP">
+                    <div class="gp-constraint-head-row">
+                      <div class="gp-constraint-title-sub">
+                        <span class="label">ACTIVE WAREHOUSE CONSTRAINT (P)</span>
+                        <span class="sub">Target fulfillment centers deployed across the Bengaluru cluster</span>
+                      </div>
+                      <div class="gp-stepper">
+                        <button type="button" class="gp-stepper-btn" id="btnStepDecP" aria-label="Decrease warehouse count">&minus;</button>
+                        <span class="gp-stepper-val" id="valConfigPDisplay">3</span>
+                        <button type="button" class="gp-stepper-btn" id="btnStepIncP" aria-label="Increase warehouse count">+</button>
+                      </div>
+                    </div>
+
+                    <!-- Slider Control -->
+                    <input type="range" class="gp-slider-track" id="inputConfigP" min="1" max="6" value="3" step="1">
+                    
+                    <div class="gp-slider-labels">
+                      <span>1 Node (Min)</span>
+                      <span class="active-node" id="valConfigPLabel">3 Active Selected</span>
+                      <span>6 Candidate Nodes</span>
+                    </div>
+
+                    <!-- Hidden compatibility hook -->
+                    <span id="valConfigP" style="display:none;">3 sites</span>
+                  </div>
+
+                  <!-- Auto-Size Mode Section (Toggled) -->
+                  <div class="gp-active-constraint-box" id="containerAutoPMax" style="display:none; margin-top:12px;">
+                    <div class="gp-constraint-head-row">
+                      <div class="gp-constraint-title-sub">
+                        <span class="label">MAX CANDIDATE CEILING (P_MAX)</span>
+                        <span class="sub">Upper bound for automated cost-minimizing algorithm</span>
+                      </div>
+                      <span class="gp-badge gp-badge-estimate" id="badgeAutoMinP" style="font-size:10.5px;">Min: 3 sites</span>
+                    </div>
+                    <input type="range" class="gp-slider-track" id="inputConfigPMax" min="1" max="6" value="6" step="1">
+                    <div class="gp-slider-labels">
+                      <span id="valConfigPMax">6 sites</span>
+                      <span class="active-node">Ceiling: <strong id="autoCeilingNote">6</strong> sites</span>
+                      <span id="autoCostSummaryNote" style="display:none;">Daily Transit Cost + Facility Leases</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: Facility & Corridor Constraints -->
+                <div>
+                  <div class="gp-constraints-section-title">
+                    <span>FACILITY &amp; CORRIDOR CONSTRAINTS</span>
+                    <span style="font-weight:600; text-transform:none; color:var(--gp-text-tertiary);">4 Bounds Defined</span>
+                  </div>
+
+                  <div class="gp-constraints-grid">
+                    
+                    <!-- Constraint 1: Per-Warehouse Capacity -->
+                    <div class="gp-metric-card">
+                      <div class="gp-metric-card-head">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                          <span>PER-WAREHOUSE CAPACITY</span>
+                        </div>
+                        <span class="var">Q_j</span>
+                      </div>
+                      <div class="gp-metric-input-row">
+                        <input type="number" class="gp-metric-input-clean tabular-nums" id="inputConfigCap" value="4000" min="500" max="25000" step="250">
+                        <span class="gp-metric-unit">orders/day</span>
+                      </div>
+                      <div class="gp-metric-subtext">Peak throughput cap per cross-dock facility</div>
+                      <span id="valConfigCap" style="display:none;">4,000 orders/day</span>
+                    </div>
+
+                    <!-- Constraint 2: Max Service Radius -->
+                    <div class="gp-metric-card">
+                      <div class="gp-metric-card-head">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                          <span>MAX SERVICE RADIUS</span>
+                        </div>
+                        <span class="var">R_max</span>
+                      </div>
+                      <div class="gp-metric-input-row">
+                        <input type="number" class="gp-metric-input-clean tabular-nums" id="inputConfigRadius" value="25" min="5" max="100" step="1">
+                        <span class="gp-metric-unit">km SLA</span>
+                      </div>
+                      <div class="gp-metric-subtext">Enforces zero customer drops outside SLA ring</div>
+                      <span id="valConfigRadius" style="display:none;">25 km</span>
+                    </div>
+
+                    <!-- Constraint 3: Fixed Lease Cost -->
+                    <div class="gp-metric-card">
+                      <div class="gp-metric-card-head">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M10 21v-4h4v4M2 7l10-4 10 4"></path></svg>
+                          <span>FIXED LEASE COST</span>
+                        </div>
+                        <span class="var">f_j</span>
+                      </div>
+                      <div class="gp-metric-input-row">
+                        <span class="gp-metric-unit" id="lblFixedCostPrefix" style="font-weight:700; font-size:16px; color:var(--gp-text-primary);">₹</span>
+                        <input type="number" class="gp-metric-input-clean tabular-nums" id="inputFixedCost" value="15000" min="0" max="500000" step="500">
+                        <span class="gp-metric-unit">/ day / site</span>
+                      </div>
+                      <div class="gp-metric-subtext">Depreciation, utility overhead, and bay leasing</div>
+                      <span id="lblFixedCost" style="display:none;"></span>
+                    </div>
+
+                    <!-- Constraint 4: Transit Cost Rate -->
+                    <div class="gp-metric-card">
+                      <div class="gp-metric-card-head">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                          <span>TRANSIT COST RATE</span>
+                        </div>
+                        <span class="var">c_ij</span>
+                      </div>
+                      <div class="gp-metric-input-row">
+                        <span class="gp-metric-unit" id="lblCostKmPrefix" style="font-weight:700; font-size:16px; color:var(--gp-text-primary);">₹</span>
+                        <input type="number" class="gp-metric-input-clean tabular-nums" id="inputCostKm" value="35" min="0.1" max="5000" step="1">
+                        <span class="gp-metric-unit">/ km</span>
+                      </div>
+                      <div class="gp-metric-subtext">Last-mile dispatch diesel, EV blend &amp; driver cost</div>
+                      <span id="lblCostKm" style="display:none;"></span>
+                      <input type="checkbox" id="chkIncludeCvrp" style="display:none;">
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Card 3: Priority Objective Function -->
+                <div class="gp-config-card">
+                  <div class="gp-config-card-head">
+                    <div class="gp-config-card-head-left">
+                      <div class="gp-config-icon-box">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                      </div>
+                      <div>
+                        <div class="gp-config-card-title">Priority Objective Function</div>
+                        <div class="gp-config-card-sub">Select multi-criteria weighting vector for the optimizer</div>
+                      </div>
+                    </div>
+                    <span class="gp-tag-math-bounds" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe; font-weight:700;">1 Active</span>
+                  </div>
+
+                  <!-- 3-Column Objective Picker -->
+                  <div class="gp-objective-grid">
+                    
+                    <!-- Objective 1: Cost Focus (Selected) -->
+                    <div class="gp-objective-card selected" id="optObjCost" data-preset="cost">
+                      <div>
+                        <div class="gp-objective-card-title">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                          <span>Cost Focus</span>
+                        </div>
+                        <div class="gp-objective-card-desc">
+                          Minimize fixed facility leases and per-km dispatch spend across all corridors.
+                        </div>
+                      </div>
+                      <div class="gp-objective-card-foot">
+                        <span>w1=0.75, w2=0.25</span>
+                        <span class="gp-badge-obj-selected">SELECTED</span>
+                      </div>
+                    </div>
+
+                    <!-- Objective 2: Speed & Proximity -->
+                    <div class="gp-objective-card" id="optObjSpeed" data-preset="speed">
+                      <div>
+                        <div class="gp-objective-card-title">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                          <span>Speed &amp; Proximity</span>
+                        </div>
+                        <div class="gp-objective-card-desc">
+                          Strict SLA fulfillment (&lt;12 km average radius) with sub-45 min delivery guarantees.
+                        </div>
+                      </div>
+                      <div class="gp-objective-card-foot">
+                        <span>&Delta; SLA &le; 12km</span>
+                        <span class="gp-badge-obj-standby">STANDBY</span>
+                      </div>
+                    </div>
+
+                    <!-- Objective 3: CO2 Abatement -->
+                    <div class="gp-objective-card" id="optObjCO2" data-preset="sustainability">
+                      <div>
+                        <div class="gp-objective-card-title">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg>
+                          <span>CO2 Abatement</span>
+                        </div>
+                        <div class="gp-objective-card-desc">
+                          Internalizes carbon price penalties at $0.21/kg CO2 with EV-preference routes.
+                        </div>
+                      </div>
+                      <div class="gp-objective-card-foot">
+                        <span>Penalized MIP</span>
+                        <span class="gp-badge-obj-standby">STANDBY</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Compatibility hidden pills for existing listeners -->
+                  <div style="display:none;">
+                    <span class="gp-preset-pill active" data-preset="cost"></span>
+                    <span class="gp-preset-pill" data-preset="speed"></span>
+                    <span class="gp-preset-pill" data-preset="sustainability"></span>
+                  </div>
+                </div>
+
+                <!-- Card 4: Distance Metric & Detour Matrix -->
+                <div class="gp-config-card">
+                  <div class="gp-config-card-head">
+                    <div class="gp-config-card-head-left">
+                      <div class="gp-config-icon-box">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H5a3 3 0 0 1 0-6h14"></path></svg>
+                      </div>
+                      <div>
+                        <div class="gp-config-card-title">Distance Metric &amp; Detour Matrix</div>
+                        <div class="gp-config-card-sub">Select geometric distance approximation models for transit calculation</div>
+                      </div>
+                    </div>
+                    <span class="gp-tag-math-bounds">Bengaluru Mesh</span>
+                  </div>
+
+                  <div class="gp-detour-grid">
+                    
+                    <!-- Option 1: Road Detour Proxy (Selected) -->
+                    <div class="gp-detour-card selected" id="cardDetourProxy">
+                      <div class="gp-detour-head">
+                        <div class="gp-detour-title">
+                          <input type="radio" name="radioDetourMode" id="radioDetourRoad" value="road_detour" checked style="accent-color:#2563eb; cursor:pointer;">
+                          <label for="radioDetourRoad" style="cursor:pointer;">Road Detour Proxy</label>
+                        </div>
+                        <span class="gp-badge-detour-tag">1.35x Empirical</span>
+                      </div>
+                      <div class="gp-detour-desc">
+                        Scales Euclidean coordinates using historical OSRM urban congestion routing coefficients.
+                      </div>
+                    </div>
+
+                    <!-- Option 2: Straight-line Haversine -->
+                    <div class="gp-detour-card" id="cardDetourHaversine">
+                      <div class="gp-detour-head">
+                        <div class="gp-detour-title">
+                          <input type="radio" name="radioDetourMode" id="radioDetourHaversine" value="haversine" style="accent-color:#2563eb; cursor:pointer;">
+                          <label for="radioDetourHaversine" style="cursor:pointer;">Straight-line Haversine</label>
+                        </div>
+                        <span class="gp-badge-detour-direct">1.00x Direct</span>
+                      </div>
+                      <div class="gp-detour-desc">
+                        Pure geodesic great-circle arc. Ideal for quick lower-bound relaxation iterations.
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Compatibility hidden select -->
+                  <select id="selectDistanceMode" style="display:none;">
+                    <option value="haversine">Haversine</option>
+                    <option value="road_detour" selected>Road Detour</option>
+                  </select>
+                </div>
+
+              </div>
+
+              <!-- RIGHT COLUMN (~38% width) -->
+              <div class="gp-config-col-right">
+                
+                <!-- Card 1: System Capacity vs. Demand -->
+                <div class="gp-config-card">
+                  <div class="gp-config-card-head">
+                    <div class="gp-config-card-head-left">
+                      <div class="gp-config-icon-box">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                      </div>
+                      <div>
+                        <div class="gp-config-card-title">System Capacity vs. Demand</div>
+                        <div class="gp-config-card-sub" id="cfgSubtitleP">Aggregated throughput at p = 3 warehouses</div>
+                      </div>
+                    </div>
+                    <span class="gp-badge gp-badge-optimal" id="badgeCapacityFeasible" style="background:#ecfdf5; color:#10b981; border:none; font-weight:700;">● Feasible</span>
+                  </div>
+
+                  <!-- 2 Big Metric Boxes -->
+                  <div class="gp-capacity-stats-box">
+                    <div>
+                      <div class="gp-cap-stat-label">DAILY ACTIVE CAPACITY</div>
+                      <div class="gp-cap-stat-val tabular-nums" id="cfgActiveCapacity">12,000</div>
+                      <div class="gp-cap-stat-sub">Orders / 24h Window</div>
+                    </div>
+                    <div>
+                      <div class="gp-cap-stat-label">FORECASTED METRO DEMAND</div>
+                      <div class="gp-cap-stat-val tabular-nums" id="cfgMetroDemand">10,240</div>
+                      <div class="gp-cap-stat-sub">36 Delivery Zones</div>
+                    </div>
+                  </div>
+
+                  <!-- Stacked Progress Bar -->
+                  <div class="gp-stacked-capacity-bar">
+                    <div class="gp-stacked-cap-allocated" id="cfgBarAllocated" style="width: 85.3%;"></div>
+                    <div class="gp-stacked-cap-headroom" id="cfgBarHeadroom" style="width: 14.7%;"></div>
+                  </div>
+
+                  <!-- Stacked Legend -->
+                  <div class="gp-stacked-cap-legend">
+                    <div class="gp-cap-legend-item">
+                      <span class="gp-cap-legend-box" style="background-color: #2563eb;"></span>
+                      <span>Allocated Demand</span>
+                    </div>
+                    <div class="gp-cap-legend-item">
+                      <span class="gp-cap-legend-box" style="background-color: #10b981;"></span>
+                      <span>Operational Headroom</span>
+                    </div>
+                  </div>
+
+                  <!-- Peak Hour Mini Profile -->
+                  <div class="gp-peakhour-head">
+                    <span>Peak Hour Demand Profile (08:00 - 20:00)</span>
+                    <span style="font-weight:600; color:var(--gp-text-primary);">Max: 1,428 pkts/hr</span>
+                  </div>
+                  <div class="gp-peakhour-bars">
+                    <div class="gp-peakhour-bar" style="height:32%;"></div>
+                    <div class="gp-peakhour-bar" style="height:48%;"></div>
+                    <div class="gp-peakhour-bar" style="height:62%;"></div>
+                    <div class="gp-peakhour-bar peak" style="height:100%;"></div>
+                    <div class="gp-peakhour-bar" style="height:80%;"></div>
+                    <div class="gp-peakhour-bar" style="height:55%;"></div>
+                    <div class="gp-peakhour-bar" style="height:38%;"></div>
+                  </div>
+                </div>
+
+                <!-- Card 2: Candidate Hub Topology -->
+                <div class="gp-config-card">
+                  <div class="gp-config-card-head">
+                    <div class="gp-config-card-head-left">
+                      <div class="gp-config-icon-box">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+                      </div>
+                      <div>
+                        <div class="gp-config-card-title">Candidate Hub Topology</div>
+                        <div class="gp-config-card-sub">Real-time candidate assignment matrix</div>
+                      </div>
+                    </div>
+                    <span class="gp-tag-math-bounds">6 Evaluated</span>
+                  </div>
+
+                  <div class="gp-topology-list">
+                    <div class="gp-topology-item">
+                      <span class="gp-topology-site-name">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                        <span>Koramangala Central</span>
+                      </span>
+                      <span class="gp-topology-site-meta">12.9352&deg; N, 77.6245&deg; E</span>
+                    </div>
+                    <div class="gp-topology-item">
+                      <span class="gp-topology-site-name">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                        <span>Domlur East Hub</span>
+                      </span>
+                      <span class="gp-topology-site-meta">12.9784&deg; N, 77.6408&deg; E</span>
+                    </div>
+                    <div class="gp-topology-item">
+                      <span class="gp-topology-site-name">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                        <span>Whitefield Terminal 1</span>
+                      </span>
+                      <span class="gp-topology-site-meta">12.9850&deg; N, 77.7310&deg; E</span>
+                    </div>
+                    <div class="gp-topology-item">
+                      <span class="gp-topology-site-name">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                        <span>South Hub Bannerghatta</span>
+                      </span>
+                      <span class="gp-topology-site-meta">12.9299&deg; N, 77.5824&deg; E</span>
+                    </div>
+                    <div class="gp-topology-item">
+                      <span class="gp-topology-site-name">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                        <span>Northwest Logistics Depot</span>
+                      </span>
+                      <span class="gp-topology-site-meta">13.0329&deg; N, 77.5273&deg; E</span>
+                    </div>
+                    <div class="gp-topology-item">
+                      <span class="gp-topology-site-name">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+                        <span>Yeshwantpur Multi-Modal</span>
+                      </span>
+                      <span class="gp-topology-site-meta">13.0238&deg; N, 77.5529&deg; E</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 3: CFLP Integer Program Formulation (MIP) -->
+                <details class="gp-mip-accordion">
+                  <summary class="gp-mip-accordion-summary">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-family:var(--gp-font-family-mono); font-weight:700; color:#2563eb;">&Sigma;</span>
+                      <span>CFLP Integer Program Formulation (MIP)</span>
+                    </span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </summary>
+                  <div class="gp-mip-accordion-body">
+                    <div style="margin-bottom:8px;">
+                      <strong>Objective Function:</strong>
+                      <div style="font-family:var(--gp-font-family-mono); background:#f8fafc; padding:8px 10px; border-radius:6px; margin-top:4px; font-size:11.5px; border:1px solid #e2e8f0;">
+                        min &sum;<sub>j</sub> f<sub>j</sub> &middot; y<sub>j</sub> + &sum;<sub>i</sub> &sum;<sub>j</sub> c<sub>ij</sub> &middot; x<sub>ij</sub>
+                      </div>
+                    </div>
+                    <div style="margin-bottom:6px;">
+                      <strong>Capacity Constraint:</strong> &sum;<sub>i</sub> d<sub>i</sub> &middot; x<sub>ij</sub> &le; Q<sub>j</sub> &middot; y<sub>j</sub>, &forall; j
+                    </div>
+                    <div style="margin-bottom:6px;">
+                      <strong>Single Sourcing / Demand Satisfaction:</strong> &sum;<sub>j</sub> x<sub>ij</sub> = 1, &forall; i
+                    </div>
+                    <div style="margin-bottom:6px;">
+                      <strong>Radius Constraint:</strong> dist(i, j) &middot; x<sub>ij</sub> &le; R<sub>max</sub>, &forall; i, j
+                    </div>
+                    <div>
+                      <strong>Binary Decision Variables:</strong> y<sub>j</sub> &in; {0, 1}, x<sub>ij</sub> &in; [0, 1]
+                    </div>
+                  </div>
+                </details>
+
+              </div>
+
+            </div>
+
+            <!-- Live Summary Strip (Preserved for compatibility) -->
+            <div id="configLiveSummaryText" style="display:none;"></div>
 
           </section>
 

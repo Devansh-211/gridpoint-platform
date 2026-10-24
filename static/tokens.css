@@ -1,58 +1,79 @@
 /**
  * GRIDPOINT Design Tokens
- * Single source of truth for color, type, spacing, radii, and elevation.
+ * Matched strictly to Design Blueprints (image_0.png & image_1.png).
  */
 
 :root {
-  /* Neutrals */
-  --gp-bg: #FAFBFC;
-  --gp-surface: #FFFFFF;
-  --gp-surface-sunken: #F3F5F7;
-  --gp-border: #E4E8EC;
-  --gp-border-strong: #D0D6DC;
-  --gp-text-primary: #14181D;
-  --gp-text-secondary: #4B5563;
-  --gp-text-tertiary: #8A94A0;
-  --gp-text-disabled: #C2C9D1;
+  /* Global Backgrounds & Surfaces */
+  --gp-bg: #f8fafc;              /* Slate-50 global workspace background */
+  --gp-surface: #ffffff;         /* Pure white cards & containers */
+  --gp-surface-sunken: #f1f5f9;  /* Slate-100 secondary buttons, tabs & tracks */
+  --gp-surface-alt: #f8fafc;
+  
+  /* Borders */
+  --gp-border: #e2e8f0;          /* Slate-200 ultra-thin card & panel borders */
+  --gp-border-light: #f1f5f9;    /* Slate-100 subtle divider */
+  --gp-border-strong: #cbd5e1;   /* Slate-300 active input border */
 
-  /* Primary — Soft Blue Scale */
-  --gp-primary-50: #EFF5FF;
-  --gp-primary-100: #DCEAFF;
-  --gp-primary-400: #5B93F5;
-  --gp-primary-500: #3B76ED;   /* Default interactive */
-  --gp-primary-600: #2C5FD1;   /* Hover / Active */
-  --gp-primary-700: #1F49A8;
-  --gp-primary-glow: rgba(59, 118, 237, 0.14);
+  /* Text & Typographic Colors */
+  --gp-text-primary: #0f172a;    /* Slate-900 high-emphasis text, metrics, headers */
+  --gp-text-secondary: #475569;  /* Slate-600 descriptions & secondary text */
+  --gp-text-tertiary: #64748b;   /* Slate-500 metadata, formula labels, tags */
+  --gp-text-muted: #94a3b8;      /* Slate-400 placeholders & subtle footers */
+  --gp-text-disabled: #cbd5e1;
 
-  /* Semantic Colors */
-  --gp-success: #1E8E5A;       /* Savings & Positive Deltas ONLY */
-  --gp-success-bg: #E8F6EE;
-  --gp-success-border: #B7E4C7;
-  --gp-warning: #B8710B;
-  --gp-warning-bg: #FDF3E3;
-  --gp-warning-border: #F7D794;
-  --gp-danger: #C43D3D;
-  --gp-danger-bg: #FBEAEA;
-  --gp-danger-border: #F5C6C6;
-  --gp-info: var(--gp-primary-500);
+  /* High-Emphasis Navy (Slate-900) */
+  --gp-navy: #0f172a;
+  --gp-navy-hover: #1e293b;
+  --gp-navy-active: #020617;
+
+  /* Accent Blue (Blue-600 Scale) */
+  --gp-blue-50: #eff6ff;         /* Soft light-blue active metric highlights & pills */
+  --gp-blue-100: #dbeafe;        /* Pill borders */
+  --gp-blue-200: #bfdbfe;
+  --gp-blue-500: #3b82f6;
+  --gp-blue-600: #2563eb;        /* Primary accent blue: CTAs, active tags, links */
+  --gp-blue-700: #1d4ed8;        /* Hover blue */
+  --gp-primary-50: var(--gp-blue-50);
+  --gp-primary-100: var(--gp-blue-100);
+  --gp-primary-500: var(--gp-blue-600);
+  --gp-primary-600: var(--gp-blue-600);
+  --gp-primary-700: var(--gp-blue-700);
+
+  /* Semantic Alerts & Badges */
+  --gp-success: #10b981;         /* Emerald-500 optimal / feasible / savings */
+  --gp-success-bg: #ecfdf5;      /* Emerald-50 background */
+  --gp-success-border: #a7f3d0;
+  --gp-success-text: #059669;
+
+  --gp-warning: #f59e0b;         /* Amber-500 transit warnings */
+  --gp-warning-bg: #fffbeb;
+  --gp-warning-border: #fde68a;
+  --gp-warning-text: #d97706;
+
+  --gp-danger: #ef4444;          /* Red-500 high load / warning tags / disruptions */
+  --gp-danger-bg: #fef2f2;       /* Light red/orange background */
+  --gp-danger-border: #fecaca;
+  --gp-danger-text: #ef4444;
 
   /* Cluster Palette for Warehouses & Zones */
-  --gp-cluster-1: #2563EB;
-  --gp-cluster-2: #0D9488;
-  --gp-cluster-3: #D97706;
-  --gp-cluster-4: #7C3AED;
-  --gp-cluster-5: #DB2777;
-  --gp-cluster-6: #0284C7;
+  --gp-cluster-1: #2563eb;
+  --gp-cluster-2: #0d9488;
+  --gp-cluster-3: #d97706;
+  --gp-cluster-4: #7c3aed;
+  --gp-cluster-5: #db2777;
+  --gp-cluster-6: #0284c7;
 
   /* Typography Scale */
-  --gp-font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Plus Jakarta Sans", "Inter", Roboto, sans-serif;
+  --gp-font-family-sans: "Inter", "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --gp-font-family-mono: "JetBrains Mono", "SF Mono", Consolas, Menlo, monospace;
 
   --gp-font-display: 28px/1.2;
   --gp-font-h1: 20px/1.3;
-  --gp-font-h2: 16px/1.4;
-  --gp-font-body: 14px/1.5;
+  --gp-font-h2: 18px/1.35;
+  --gp-font-body: 13.5px/1.5;
   --gp-font-small: 12px/1.4;
+  --gp-font-tiny: 11px/1.3;
 
   --gp-weight-regular: 400;
   --gp-weight-medium: 500;
@@ -64,29 +85,31 @@
   --gp-space-2: 8px;
   --gp-space-3: 12px;
   --gp-space-4: 16px;
-  --gp-space-5: 24px;
-  --gp-space-6: 32px;
-  --gp-space-8: 48px;
-  --gp-space-10: 64px;
+  --gp-space-5: 20px;
+  --gp-space-6: 24px;
+  --gp-space-8: 32px;
+  --gp-space-10: 48px;
 
   /* Radii */
-  --gp-radius-sm: 6px;   /* Inputs, chips, tags */
-  --gp-radius-md: 10px;  /* Cards, buttons */
-  --gp-radius-lg: 16px;  /* Modals, large panels */
+  --gp-radius-xs: 4px;
+  --gp-radius-sm: 6px;   /* Pills, inputs, small tags */
+  --gp-radius-md: 8px;   /* Standard buttons & sub-cards */
+  --gp-radius-lg: 12px;  /* Main workspace cards & containers */
+  --gp-radius-xl: 14px;  /* Map wrapper & inspector drawer */
   --gp-radius-full: 9999px;
 
   /* Layout Containers */
-  --gp-container-max: 1440px;
-  --gp-content-max: 1120px;
-  --gp-rail-width: 250px;
+  --gp-container-max: 1560px;
+  --gp-rail-width: 240px;
   --gp-header-height: 56px;
 
-  /* Elevation */
-  --gp-shadow-sm: 0 1px 2px rgba(20, 24, 29, 0.05);
-  --gp-shadow-md: 0 4px 12px rgba(20, 24, 29, 0.08);
-  --gp-shadow-lg: 0 12px 32px rgba(20, 24, 29, 0.12);
+  /* Elevation (Subtle B2B SaaS Flat Elevation) */
+  --gp-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --gp-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --gp-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --gp-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
 
   /* Transitions */
-  --gp-transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
-  --gp-transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --gp-transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --gp-transition-normal: 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }

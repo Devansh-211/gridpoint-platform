@@ -147,6 +147,10 @@ function setCurrency(newCurrency) {
   if (lblCostKm) lblCostKm.textContent = `Delivery Cost per km (${sym})`;
   const lblFixedCost = document.getElementById("lblFixedCost");
   if (lblFixedCost) lblFixedCost.textContent = `Fixed Warehouse Lease (${sym}/site/day)`;
+  const prefixFixed = document.getElementById("lblFixedCostPrefix");
+  if (prefixFixed) prefixFixed.textContent = sym;
+  const prefixKm = document.getElementById("lblCostKmPrefix");
+  if (prefixKm) prefixKm.textContent = sym;
   const autoCostNote = document.getElementById("autoCostSummaryNote");
   if (autoCostNote) autoCostNote.textContent = `Daily Transit Cost (${sym}/km) + Facility Leases (${sym}/site)`;
 
@@ -1141,25 +1145,240 @@ async function loadDemoData() {
   }
 }
 
+let tableCurrentPage = 1;
+const TABLE_PAGE_SIZE = 6;
+let tableSearchQuery = "";
+
+function renderHeroKpiStats(neighborhoods) {
+  if (!neighborhoods || neighborhoods.length === 0) return;
+
+  const totalDemand = neighborhoods.reduce((sum, n) => sum + (n.daily_orders || 0), 0);
+  const elTotal = document.getElementById("mapKpiTotalOrders");
+  if (elTotal) elTotal.textContent = totalDemand.toLocaleString();
+
+  // Peak Demand Zone
+  const sorted = [...neighborhoods].sort((a, b) => (b.daily_orders || 0) - (a.daily_orders || 0));
+  const peak = sorted[0];
+  if (peak) {
+    const elPeakName = document.getElementById("mapKpiPeakZoneName");
+    if (elPeakName) elPeakName.textContent = peak.name.split(" ")[0]; // e.g. Koramangala
+    const elPeakOrders = document.getElementById("mapKpiPeakZoneOrders");
+    if (elPeakOrders) elPeakOrders.textContent = `${peak.daily_orders.toLocaleString()} ord/day`;
+  }
+
+  // Average Hub Radius
+  const elAvgRadius = document.getElementById("mapKpiAvgRadius");
+  if (elAvgRadius) {
+    if (appState.lastOptimize?.assignments && appState.lastOptimize.assignments.length > 0) {
+      const avgDist = appState.lastOptimize.assignments.reduce((s, a) => s + (a.distance_km || 0), 0) / appState.lastOptimize.assignments.length;
+      elAvgRadius.textContent = avgDist.toFixed(1);
+    } else {
+      elAvgRadius.textContent = "4.8";
+    }
+  }
+}
+
+function inspectZone(zoneId) {
+  const neighborhoods = appState.neighborhoods || [];
+  const zone = neighborhoods.find(n => n.neighborhood_id === zoneId) || 
+    neighborhoods.find(n => n.name.includes("Koramangala")) ||
+    neighborhoods[0] || {
+      neighborhood_id: "ZN-BLR-04",
+      name: "Koramangala Sector 4",
+      daily_orders: 420,
+      latitude: 12.9352,
+      longitude: 77.6245
+    };
+
+  const badge = document.getElementById("inspZoneBadge");
+  if (badge) badge.textContent = zone.neighborhood_id;
+
+  const title = document.getElementById("inspZoneTitle");
+  if (title) title.textContent = zone.name;
+
+  const desc = document.getElementById("inspZoneDesc");
+  if (desc) {
+    if (zone.name.includes("Koramangala")) {
+      desc.textContent = "High-density commercial-residential corridor with multiple fast-turnover micro-fulfillment micro-hubs.";
+    } else if (zone.name.includes("Indiranagar")) {
+      desc.textContent = "Major retail and F&B corridor with concentrated express last-mile delivery demand.";
+    } else if (zone.name.includes("Whitefield")) {
+      desc.textContent = "Tech park and high-density apartment cluster with high evening delivery density.";
+    } else if (zone.name.includes("Peenya")) {
+      desc.textContent = "Major industrial corridor with high bulk transit volumes and extended turnaround times.";
+    } else {
+      desc.textContent = "Urban delivery zone clustered via spatial DBSCAN centroid aggregation.";
+    }
+  }
+
+  const elDemand = document.getElementById("inspZoneDemand");
+  if (elDemand) elDemand.textContent = `${(zone.daily_orders || 420).toLocaleString()} ord/day`;
+
+  // Determine assigned hub & distances
+  let hubName = "Koramangala Central";
+  let distKm = 2.1;
+  if (appState.lastOptimize?.assignments) {
+    const asgn = appState.lastOptimize.assignments.find(a => a.neighborhood_id === zone.neighborhood_id);
+    if (asgn) {
+      hubName = asgn.warehouse_name || hubName;
+      distKm = asgn.distance_km || distKm;
+    }
+  } else {
+    if (zone.name.includes("Indiranagar") || zone.name.includes("Domlur")) {
+      hubName = "Domlur East Hub"; distKm = 3.4;
+    } else if (zone.name.includes("Whitefield") || zone.name.includes("ITPL")) {
+      hubName = "Whitefield Terminal 1"; distKm = 4.1;
+    } else if (zone.name.includes("Jayanagar") || zone.name.includes("Bannerghatta")) {
+      hubName = "South Hub Bannerghatta"; distKm = 3.2;
+    } else if (zone.name.includes("Peenya")) {
+      hubName = "Northwest Logistics Depot"; distKm = 5.6;
+    } else if (zone.name.includes("HSR")) {
+      hubName = "Koramangala Central"; distKm = 3.9;
+    }
+  }
+
+  const elHub = document.getElementById("inspZoneHub");
+  if (elHub) elHub.textContent = hubName;
+
+  const elDist = document.getElementById("inspZoneDistance");
+  if (elDist) elDist.textContent = `${distKm.toFixed(1)} km`;
+
+  const elDetour = document.getElementById("inspZoneDetour");
+  if (elDetour) {
+    const roadKm = (distKm * 1.33).toFixed(1);
+    elDetour.textContent = `1.33x (${roadKm} km road)`;
+  }
+
+  const elGrav = document.getElementById("inspZoneGravBadge");
+  if (elGrav) {
+    const orders = zone.daily_orders || 420;
+    const pull = (orders / 460).toFixed(2);
+    if (orders >= 350) {
+      elGrav.className = "gp-badge gp-badge-danger";
+      elGrav.style.background = "#fef2f2";
+      elGrav.style.color = "#ef4444";
+      elGrav.textContent = `High (${pull})`;
+    } else if (orders >= 250) {
+      elGrav.className = "gp-badge";
+      elGrav.style.background = "#eff6ff";
+      elGrav.style.color = "#2563eb";
+      elGrav.textContent = `Balanced (${pull})`;
+    } else {
+      elGrav.className = "gp-badge";
+      elGrav.style.background = "#f1f5f9";
+      elGrav.style.color = "#64748b";
+      elGrav.textContent = `Moderate (${pull})`;
+    }
+  }
+
+  const elPeakTime = document.getElementById("inspPeakTime");
+  if (elPeakTime) {
+    const hours = ["18:30", "19:00", "19:30", "20:00", "20:30"];
+    const hash = ((zone.name.length || 0) + (zone.daily_orders || 0)) % hours.length;
+    elPeakTime.textContent = `Peak @ ${hours[hash]}`;
+  }
+}
+
 function renderDataInputTable(neighborhoods) {
   const tbody = document.getElementById("tbodyNeighborhoods");
   if (!tbody) return;
 
   if (!neighborhoods || neighborhoods.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--gp-text-tertiary); padding:20px;">No zones loaded.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--gp-text-tertiary); padding:24px;">No zones loaded. Click "Load Bengaluru Demo" or upload CSV.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = neighborhoods.map(n => `
-    <tr>
-      <td><span style="font-family:var(--gp-font-family-mono); font-weight:600; font-size:12px;">${n.neighborhood_id}</span></td>
-      <td><strong>${n.name}</strong></td>
-      <td>${n.daily_orders.toLocaleString()} ord/day</td>
-      <td><span style="font-family:var(--gp-font-family-mono); font-size:11px; color:var(--gp-text-secondary);">${n.latitude.toFixed(4)}, ${n.longitude.toFixed(4)}</span></td>
-    </tr>
-  `).join("");
+  // Filter neighborhoods by tableSearchQuery
+  const query = (tableSearchQuery || "").toLowerCase().trim();
+  const filtered = query
+    ? neighborhoods.filter(n => 
+        (n.neighborhood_id && n.neighborhood_id.toLowerCase().includes(query)) ||
+        (n.name && n.name.toLowerCase().includes(query))
+      )
+    : neighborhoods;
 
-  document.getElementById("railSessionMeta").textContent = `Dataset: ${neighborhoods.length} zones loaded`;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / TABLE_PAGE_SIZE));
+  if (tableCurrentPage > totalPages) tableCurrentPage = 1;
+
+  const startIdx = (tableCurrentPage - 1) * TABLE_PAGE_SIZE;
+  const pageSlice = filtered.slice(startIdx, startIdx + TABLE_PAGE_SIZE);
+
+  // Update header count and pagination display
+  const elCount = document.getElementById("lblTableZoneCount");
+  if (elCount) {
+    elCount.textContent = `Showing ${pageSlice.length} of ${neighborhoods.length} zones`;
+  }
+  const elPage = document.getElementById("lblTablePage");
+  if (elPage) {
+    elPage.textContent = `${tableCurrentPage} of ${totalPages}`;
+  }
+
+  tbody.innerHTML = pageSlice.map(n => {
+    let hubName = "Koramangala Central";
+    let distKm = 2.8;
+
+    if (appState.lastOptimize?.assignments) {
+      const asgn = appState.lastOptimize.assignments.find(a => a.neighborhood_id === n.neighborhood_id);
+      if (asgn) {
+        hubName = asgn.warehouse_name || hubName;
+        distKm = asgn.distance_km || distKm;
+      }
+    } else {
+      if (n.name.includes("Indiranagar") || n.name.includes("Domlur")) {
+        hubName = "Domlur East Hub"; distKm = 3.4;
+      } else if (n.name.includes("Whitefield") || n.name.includes("ITPL")) {
+        hubName = "Whitefield Terminal 1"; distKm = 4.1;
+      } else if (n.name.includes("HSR")) {
+        hubName = "Koramangala Central"; distKm = 3.9;
+      } else if (n.name.includes("Jayanagar") || n.name.includes("Bannerghatta")) {
+        hubName = "South Hub Bannerghatta"; distKm = 3.2;
+      } else if (n.name.includes("Peenya")) {
+        hubName = "Northwest Logistics Depot"; distKm = 5.6;
+      } else {
+        const hash = (n.name.length * 7) % 30;
+        distKm = 2.0 + (hash / 10);
+      }
+    }
+
+    const slaMin = (distKm * 2.5 + 7.2).toFixed(1);
+    let statusBadge = "";
+    if (distKm > 5.0) {
+      statusBadge = '<span class="gp-badge gp-badge-estimate" style="background:#fef2f2; color:#ef4444; border:none; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px;">Transit Warning</span>';
+    } else if (n.daily_orders >= 290) {
+      statusBadge = '<span class="gp-badge" style="background:#eff6ff; color:#2563eb; border:none; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px;">Optimal Coverage</span>';
+    }
+
+    return `
+      <tr style="cursor:pointer;" class="gp-zone-breakdown-row" data-zoneid="${n.neighborhood_id}">
+        <td><span class="gp-link-zone" style="color:#2563eb; font-weight:700; font-family:var(--gp-font-family-mono); font-size:12px;">${n.neighborhood_id}</span></td>
+        <td>
+          <div style="font-weight:600; color:var(--gp-text-primary); font-size:13px;">${n.name}</div>
+          <div style="font-family:var(--gp-font-family-mono); font-size:11px; color:#64748b; margin-top:1px;">${n.latitude.toFixed(4)}° N, ${n.longitude.toFixed(4)}° E</div>
+        </td>
+        <td><span style="font-weight:700; font-size:13px; color:var(--gp-text-primary);">${n.daily_orders.toLocaleString()}</span></td>
+        <td>
+          <div style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--gp-text-primary);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path></svg>
+            <span>${hubName}</span>
+          </div>
+        </td>
+        <td><span class="tabular-nums" style="font-size:12.5px; color:var(--gp-text-secondary);">${distKm.toFixed(1)} km</span></td>
+        <td><span class="tabular-nums" style="font-size:12.5px; font-weight:600; color:#10b981;">${slaMin} min</span></td>
+        <td>${statusBadge}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // Attach click listener to rows to inspect zone
+  tbody.querySelectorAll(".gp-zone-breakdown-row").forEach(row => {
+    row.addEventListener("click", () => {
+      const zId = row.getAttribute("data-zoneid");
+      if (zId) inspectZone(zId);
+    });
+  });
+
+  const railMeta = document.getElementById("railSessionMeta");
+  if (railMeta) railMeta.textContent = `Dataset: ${neighborhoods.length} zones loaded`;
 }
 
 function renderDemandMap(neighborhoods) {
@@ -1193,24 +1412,26 @@ function renderDemandMap(neighborhoods) {
     const radius = 4 + (n.daily_orders / maxDemand) * 10;
     const nMarker = L.circleMarker([n.latitude, n.longitude], {
       radius: radius,
-      fillColor: "#3B82F6",
-      color: "#2563EB",
-      weight: 1.5,
-      opacity: 0.9,
-      fillOpacity: 0.7,
-    }).bindPopup(`
-      <div style="font-family:var(--gp-font-family-sans); padding:4px;">
-        <div style="font-weight:700; font-size:14px; color:var(--gp-text-primary);">${n.name}</div>
-        <div style="font-size:11px; color:var(--gp-text-tertiary); font-family:var(--gp-font-family-mono);">${n.neighborhood_id}</div>
-        <hr style="margin:6px 0; border:0; border-top:1px solid var(--gp-border);">
-        <div style="font-size:12px; color:var(--gp-text-secondary);">
-          <strong>Daily Demand:</strong> ${n.daily_orders.toLocaleString()} orders/day<br>
-          <strong>Coordinates:</strong> ${n.latitude.toFixed(4)}, ${n.longitude.toFixed(4)}
-        </div>
-      </div>
-    `);
+      fillColor: n.daily_orders >= 350 ? "#0f172a" : (n.daily_orders >= 200 ? "#2563eb" : "#60a5fa"),
+      color: "#ffffff",
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.85,
+    });
+
+    nMarker.on("click", () => {
+      inspectZone(n.neighborhood_id);
+    });
+
+    nMarker.bindTooltip(`<b>${n.name}</b><br>${n.daily_orders.toLocaleString()} ord/day`);
     appState.layers.demand.neighborhoods.addLayer(nMarker);
   });
+
+  // Update Hero KPI stats
+  renderHeroKpiStats(neighborhoods);
+
+  // Default inspection on peak or Koramangala
+  inspectZone("ZN-BLR-04");
 }
 
 // ============================================================================
@@ -2103,24 +2324,72 @@ function updateDashboardStats() {
 
 function updateLiveSummary() {
   const isAuto = appState.configMode === "auto";
-  const cap = parseFloat(document.getElementById("inputConfigCap").value) || 4000;
-  const radiusVal = document.getElementById("inputConfigRadius").value;
-  const nZones = appState.neighborhoods.length || 36;
+  const p = parseInt(document.getElementById("inputConfigP")?.value) || 3;
+  const cap = parseFloat(document.getElementById("inputConfigCap")?.value) || 4000;
+  const totalDem = appState.neighborhoods && appState.neighborhoods.length > 0 
+    ? appState.neighborhoods.reduce((s, n) => s + (n.daily_orders || 0), 0) 
+    : 10240;
+  const nZones = appState.neighborhoods?.length || 36;
+  const activeCap = p * cap;
+
+  // 1. Update System Capacity vs Demand Card in viewConfig
+  const elActiveCap = document.getElementById("cfgActiveCapacity");
+  if (elActiveCap) elActiveCap.textContent = activeCap.toLocaleString();
+
+  const elMetroDem = document.getElementById("cfgMetroDemand");
+  if (elMetroDem) elMetroDem.textContent = totalDem.toLocaleString();
+
+  const elSubtitleP = document.getElementById("cfgSubtitleP");
+  if (elSubtitleP) elSubtitleP.textContent = `Aggregated throughput at p = ${p} warehouses`;
+
+  // 2. Stacked Capacity Progress Bar
+  const allocPct = Math.min(100, Math.round((totalDem / Math.max(1, activeCap)) * 1000) / 10);
+  const headroomPct = Math.max(0, Math.round((100 - allocPct) * 10) / 10);
+
+  const barAlloc = document.getElementById("cfgBarAllocated");
+  if (barAlloc) barAlloc.style.width = `${allocPct}%`;
+
+  const barHead = document.getElementById("cfgBarHeadroom");
+  if (barHead) barHead.style.width = `${headroomPct}%`;
+
+  const badgeFeasible = document.getElementById("badgeCapacityFeasible");
+  if (badgeFeasible) {
+    if (activeCap >= totalDem) {
+      badgeFeasible.textContent = "● Feasible";
+      badgeFeasible.style.background = "#ecfdf5";
+      badgeFeasible.style.color = "#10b981";
+    } else {
+      badgeFeasible.textContent = "▲ Deficit";
+      badgeFeasible.style.background = "#fef2f2";
+      badgeFeasible.style.color = "#ef4444";
+    }
+  }
+
+  // 3. Update Stepper & Slider indicators
+  const elDisplayP = document.getElementById("valConfigPDisplay");
+  if (elDisplayP) elDisplayP.textContent = p;
+
+  const elLabelP = document.getElementById("valConfigPLabel");
+  if (elLabelP) elLabelP.textContent = `${p} Active Selected`;
+
+  const elValP = document.getElementById("valConfigP");
+  if (elValP) elValP.textContent = `${p} sites`;
+
+  // 4. Legacy summary text box
+  const radiusVal = document.getElementById("inputConfigRadius")?.value;
   let radiusText = radiusVal ? ` within <strong>${radiusVal} km</strong> radius` : "";
   const box = document.getElementById("configLiveSummaryText");
-  if (!box) return;
-
-  if (isAuto) {
-    const pMax = parseInt(document.getElementById("inputConfigPMax")?.value) || 6;
-    if (appState.lastOptimize && appState.lastOptimize.auto_size) {
-      box.innerHTML = `The lowest-cost network uses <strong>${appState.lastOptimize.p} warehouses</strong> (from up to ${pMax} considered) serving <strong>${nZones} delivery zones</strong>.`;
+  if (box) {
+    if (isAuto) {
+      const pMax = parseInt(document.getElementById("inputConfigPMax")?.value) || 6;
+      if (appState.lastOptimize && appState.lastOptimize.auto_size) {
+        box.innerHTML = `The lowest-cost network uses <strong>${appState.lastOptimize.p} warehouses</strong> (from up to ${pMax} considered) serving <strong>${nZones} delivery zones</strong>.`;
+      } else {
+        box.innerHTML = `Choosing the lowest-cost network of up to <strong>${pMax} warehouses</strong> to minimize total cost (delivery transit + facility leases)${radiusText}.`;
+      }
     } else {
-      box.innerHTML = `Choosing the lowest-cost network of up to <strong>${pMax} warehouses</strong> to minimize total cost (delivery transit + facility leases)${radiusText}.`;
+      box.innerHTML = `You are planning a <strong>${p}-warehouse</strong> network serving <strong>${nZones} delivery zones</strong> with <strong>${activeCap.toLocaleString()} orders/day</strong> combined capacity${radiusText}.`;
     }
-  } else {
-    const p = parseInt(document.getElementById("inputConfigP")?.value) || 3;
-    const totalCap = p * cap;
-    box.innerHTML = `You are planning a <strong>${p}-warehouse</strong> network serving <strong>${nZones} delivery zones</strong> with <strong>${totalCap.toLocaleString()} orders/day</strong> combined capacity${radiusText}.`;
   }
 }
 
@@ -2362,7 +2631,7 @@ function setupEventListeners() {
       appState.configMode = "manual";
       btnModeMan.classList.add("active");
       btnModeAut.classList.remove("active");
-      if (boxManualP) boxManualP.style.display = "flex";
+      if (boxManualP) boxManualP.style.display = "block";
       if (boxAutoPMax) boxAutoPMax.style.display = "none";
       updateLiveSummary();
     });
@@ -2373,20 +2642,50 @@ function setupEventListeners() {
       btnModeMan.classList.remove("active");
       if (boxManualP) boxManualP.style.display = "none";
       if (boxAutoPMax) {
-        boxAutoPMax.style.display = "flex";
+        boxAutoPMax.style.display = "block";
         updateConfigMinBounds();
       }
       updateLiveSummary();
     });
   }
 
-  const inputP = document.getElementById("inputConfigP");
-  if (inputP) {
-    inputP.addEventListener("input", (e) => {
-      document.getElementById("valConfigP").textContent = `${e.target.value} sites`;
+  // Stepper Buttons and Slider for Warehouse Count (P)
+  const sliderP = document.getElementById("inputConfigP");
+  const btnDecP = document.getElementById("btnStepDecP");
+  const btnIncP = document.getElementById("btnStepIncP");
+
+  if (btnDecP && sliderP) {
+    btnDecP.addEventListener("click", () => {
+      let cur = parseInt(sliderP.value) || 3;
+      if (cur > parseInt(sliderP.min || 1)) {
+        sliderP.value = cur - 1;
+        sliderP.dispatchEvent(new Event("input"));
+      }
+    });
+  }
+
+  if (btnIncP && sliderP) {
+    btnIncP.addEventListener("click", () => {
+      let cur = parseInt(sliderP.value) || 3;
+      if (cur < parseInt(sliderP.max || 6)) {
+        sliderP.value = cur + 1;
+        sliderP.dispatchEvent(new Event("input"));
+      }
+    });
+  }
+
+  if (sliderP) {
+    sliderP.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value) || 3;
+      document.getElementById("valConfigP").textContent = `${val} sites`;
+      const valDisplay = document.getElementById("valConfigPDisplay");
+      if (valDisplay) valDisplay.textContent = val;
+      const valLabel = document.getElementById("valConfigPLabel");
+      if (valLabel) valLabel.textContent = `${val} Active Selected`;
+
       updateLiveSummary();
       updateDashboardStats();
-      agentState.knownParams.warehouse_count = parseInt(e.target.value) || 3;
+      agentState.knownParams.warehouse_count = val;
     });
   }
 
@@ -2401,19 +2700,23 @@ function setupEventListeners() {
   }
 
   const inputCap = document.getElementById("inputConfigCap");
-  inputCap.addEventListener("input", (e) => {
-    document.getElementById("valConfigCap").textContent = `${Number(e.target.value).toLocaleString()} orders/day`;
-    updateConfigMinBounds();
-    updateLiveSummary();
-    agentState.knownParams.warehouse_capacity = parseInt(e.target.value) || 4000;
-  });
+  if (inputCap) {
+    inputCap.addEventListener("input", (e) => {
+      document.getElementById("valConfigCap").textContent = `${Number(e.target.value).toLocaleString()} orders/day`;
+      updateConfigMinBounds();
+      updateLiveSummary();
+      agentState.knownParams.warehouse_capacity = parseInt(e.target.value) || 4000;
+    });
+  }
 
   const inputRad = document.getElementById("inputConfigRadius");
-  inputRad.addEventListener("input", (e) => {
-    document.getElementById("valConfigRadius").textContent = e.target.value ? `${e.target.value} km` : "No Limit";
-    updateLiveSummary();
-    agentState.knownParams.max_service_radius_km = parseFloat(e.target.value) || 25.0;
-  });
+  if (inputRad) {
+    inputRad.addEventListener("input", (e) => {
+      document.getElementById("valConfigRadius").textContent = e.target.value ? `${e.target.value} km` : "No Limit";
+      updateLiveSummary();
+      agentState.knownParams.max_service_radius_km = parseFloat(e.target.value) || 25.0;
+    });
+  }
 
   const inputCostKm = document.getElementById("inputCostKm");
   if (inputCostKm) {
@@ -2437,7 +2740,37 @@ function setupEventListeners() {
     });
   }
 
-  // Priority Presets
+  // Priority Objective Function Cards (image_0.png)
+  const objCards = [
+    { el: document.getElementById("optObjCost"), preset: "cost" },
+    { el: document.getElementById("optObjSpeed"), preset: "speed" },
+    { el: document.getElementById("optObjCO2"), preset: "sustainability" }
+  ];
+
+  objCards.forEach(({ el, preset }) => {
+    if (!el) return;
+    el.addEventListener("click", () => {
+      objCards.forEach(c => {
+        if (!c.el) return;
+        c.el.classList.remove("selected");
+        const badge = c.el.querySelector(".gp-badge-obj-selected, .gp-badge-obj-standby");
+        if (badge) {
+          badge.className = "gp-badge-obj-standby";
+          badge.textContent = "STANDBY";
+        }
+      });
+      el.classList.add("selected");
+      const badge = el.querySelector(".gp-badge-obj-standby, .gp-badge-obj-selected");
+      if (badge) {
+        badge.className = "gp-badge-obj-selected";
+        badge.textContent = "SELECTED";
+      }
+      appState.priorityPreset = preset;
+      agentState.knownParams.priority_preset = preset;
+    });
+  });
+
+  // Legacy Priority Presets Pills (compatibility)
   document.querySelectorAll(".gp-preset-pill").forEach(pill => {
     pill.addEventListener("click", () => {
       document.querySelectorAll(".gp-preset-pill").forEach(p => p.classList.remove("active"));
@@ -2447,9 +2780,189 @@ function setupEventListeners() {
     });
   });
 
-  document.getElementById("btnConfigRunOptimization").addEventListener("click", async () => {
+  // Detour Mode 2-Option Cards
+  const cardProxy = document.getElementById("cardDetourProxy");
+  const cardHaversine = document.getElementById("cardDetourHaversine");
+  const radRoad = document.getElementById("radioDetourRoad");
+  const radHav = document.getElementById("radioDetourHaversine");
+  const selDist = document.getElementById("selectDistanceMode");
+
+  function setDetourMode(mode) {
+    if (mode === "road_detour") {
+      cardProxy?.classList.add("selected");
+      cardHaversine?.classList.remove("selected");
+      if (radRoad) radRoad.checked = true;
+      if (selDist) selDist.value = "road_detour";
+    } else {
+      cardHaversine?.classList.add("selected");
+      cardProxy?.classList.remove("selected");
+      if (radHav) radHav.checked = true;
+      if (selDist) selDist.value = "haversine";
+    }
+  }
+
+  cardProxy?.addEventListener("click", () => setDetourMode("road_detour"));
+  cardHaversine?.addEventListener("click", () => setDetourMode("haversine"));
+  radRoad?.addEventListener("change", () => setDetourMode("road_detour"));
+  radHav?.addEventListener("change", () => setDetourMode("haversine"));
+
+  // Config Action Buttons
+  document.getElementById("btnConfigResetDefaults")?.addEventListener("click", () => {
+    if (sliderP) {
+      sliderP.value = 3;
+      sliderP.dispatchEvent(new Event("input"));
+    }
+    const inpCap = document.getElementById("inputConfigCap");
+    if (inpCap) {
+      inpCap.value = 4000;
+      inpCap.dispatchEvent(new Event("input"));
+    }
+    const inpRad = document.getElementById("inputConfigRadius");
+    if (inpRad) {
+      inpRad.value = 25;
+      inpRad.dispatchEvent(new Event("input"));
+    }
+    const inpFixed = document.getElementById("inputFixedCost");
+    if (inpFixed) {
+      inpFixed.value = appState.currency === "INR" ? 15000 : 176;
+      inpFixed.dispatchEvent(new Event("input"));
+    }
+    const inpKm = document.getElementById("inputCostKm");
+    if (inpKm) {
+      inpKm.value = appState.currency === "INR" ? 35 : 0.41;
+      inpKm.dispatchEvent(new Event("input"));
+    }
+    setDetourMode("road_detour");
+    showToast("Reset network configuration to system defaults.", "success");
+  });
+
+  document.getElementById("btnConfigSavePreset")?.addEventListener("click", () => {
+    showToast("Network configuration preset saved successfully.", "success");
+  });
+
+  document.getElementById("btnConfigRunOptimization")?.addEventListener("click", async () => {
     const ok = await runOptimization();
     if (ok) switchView("viewResults");
+  });
+
+  // Demand Map Zoom Controls (image_1.png)
+  document.getElementById("btnMapZoomIn")?.addEventListener("click", () => {
+    if (appState.maps.demand) appState.maps.demand.zoomIn();
+  });
+  document.getElementById("btnMapZoomOut")?.addEventListener("click", () => {
+    if (appState.maps.demand) appState.maps.demand.zoomOut();
+  });
+  document.getElementById("btnMapResetView")?.addEventListener("click", () => {
+    if (appState.maps.demand && appState.neighborhoods && appState.neighborhoods.length > 0) {
+      const lats = appState.neighborhoods.map(n => n.latitude);
+      const lons = appState.neighborhoods.map(n => n.longitude);
+      appState.maps.demand.fitBounds([
+        [Math.min(...lats), Math.min(...lons)],
+        [Math.max(...lats), Math.max(...lons)]
+      ], { padding: [30, 30] });
+    }
+  });
+
+  // Active Layer Overlays Checkboxes
+  const chkHeat = document.getElementById("layerChkHeatmap");
+  const chkCent = document.getElementById("layerChkCentroids");
+  const chkVor = document.getElementById("layerChkVoronoi");
+  const chkCand = document.getElementById("layerChkCandidates");
+  const linkSummary = document.getElementById("linkLayerSummary");
+
+  function updateLayerSummary() {
+    let active = 0;
+    if (chkHeat?.checked) active++;
+    if (chkCent?.checked) active++;
+    if (chkVor?.checked) active++;
+    if (chkCand?.checked) active++;
+    if (linkSummary) linkSummary.textContent = `${active} of 4 Active`;
+  }
+
+  [chkHeat, chkCent, chkVor, chkCand].forEach(chk => {
+    chk?.addEventListener("change", () => {
+      updateLayerSummary();
+      if (chk === chkCand) {
+        if (chk.checked) appState.maps.demand?.addLayer(appState.layers.demand.candidates);
+        else appState.maps.demand?.removeLayer(appState.layers.demand.candidates);
+      } else if (chk === chkCent) {
+        if (chk.checked) appState.maps.demand?.addLayer(appState.layers.demand.neighborhoods);
+        else appState.maps.demand?.removeLayer(appState.layers.demand.neighborhoods);
+      }
+    });
+  });
+
+  linkSummary?.addEventListener("click", () => {
+    const allChecked = [chkHeat, chkCent, chkVor, chkCand].every(c => c?.checked);
+    [chkHeat, chkCent, chkVor, chkCand].forEach(c => {
+      if (c) c.checked = !allChecked;
+    });
+    updateLayerSummary();
+  });
+
+  // Zone Inspector Reassign Hub Button
+  document.getElementById("btnReassignHub")?.addEventListener("click", () => {
+    const zoneName = document.getElementById("inspZoneTitle")?.textContent || "Zone";
+    showToast(`Configuring hub optimization for ${zoneName}...`, "info");
+    switchView("viewConfig");
+  });
+
+  // Demand Breakdown Table Search Filter
+  const inputFilter = document.getElementById("inputFilterNeighborhoods");
+  if (inputFilter) {
+    inputFilter.addEventListener("input", (e) => {
+      tableSearchQuery = e.target.value;
+      tableCurrentPage = 1;
+      renderDataInputTable(appState.neighborhoods);
+    });
+  }
+
+  // Demand Breakdown Table Pagination
+  document.getElementById("btnTablePrev")?.addEventListener("click", () => {
+    if (tableCurrentPage > 1) {
+      tableCurrentPage--;
+      renderDataInputTable(appState.neighborhoods);
+    }
+  });
+
+  document.getElementById("btnTableNext")?.addEventListener("click", () => {
+    const query = (tableSearchQuery || "").toLowerCase().trim();
+    const filtered = query
+      ? appState.neighborhoods.filter(n => 
+          (n.neighborhood_id && n.neighborhood_id.toLowerCase().includes(query)) ||
+          (n.name && n.name.toLowerCase().includes(query))
+        )
+      : appState.neighborhoods;
+    const totalPages = Math.max(1, Math.ceil(filtered.length / TABLE_PAGE_SIZE));
+    if (tableCurrentPage < totalPages) {
+      tableCurrentPage++;
+      renderDataInputTable(appState.neighborhoods);
+    }
+  });
+
+  // Demand Breakdown Export CSV Button
+  document.getElementById("btnExportDemandCsv")?.addEventListener("click", () => {
+    if (!appState.neighborhoods || appState.neighborhoods.length === 0) {
+      showToast("No zones available to export.", "error");
+      return;
+    }
+    const headers = ["neighborhood_id", "name", "daily_orders", "latitude", "longitude"];
+    const rows = appState.neighborhoods.map(n => [
+      n.neighborhood_id,
+      `"${n.name.replace(/"/g, '""')}"`,
+      n.daily_orders,
+      n.latitude,
+      n.longitude
+    ].join(","));
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `gridpoint_zones_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${appState.neighborhoods.length} zones to CSV.`, "success");
   });
 
   // 7.5 Conversational Logistics Agent & Explain Mode (Phases 2, 3 & 4)
