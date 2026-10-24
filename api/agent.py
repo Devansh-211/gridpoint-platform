@@ -43,8 +43,7 @@ def get_gemini_client() -> Optional[Any]:
         return None
     try:
         from google import genai
-        from google.genai import types
-        return genai.Client(api_key=gemini_key, http_options=types.HttpOptions(timeout=4000))
+        return genai.Client(api_key=gemini_key, http_options=types.HttpOptions(timeout=15000))
     except ImportError:
         logger.warning("Google GenAI SDK ('google-genai') is not installed in the active Python environment.")
         return None
