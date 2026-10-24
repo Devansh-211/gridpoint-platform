@@ -1,0 +1,302 @@
+{
+  "session_id": "default",
+  "neighborhood_count": 36,
+  "total_demand": 10290.0,
+  "preview": [
+    {
+      "neighborhood_id": "BLR_01",
+      "name": "Koramangala",
+      "latitude": 12.9352,
+      "longitude": 77.6245,
+      "daily_orders": 420.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_02",
+      "name": "Indiranagar",
+      "latitude": 12.9784,
+      "longitude": 77.6408,
+      "daily_orders": 380.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_03",
+      "name": "Whitefield",
+      "latitude": 12.9698,
+      "longitude": 77.75,
+      "daily_orders": 480.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_04",
+      "name": "Electronic City Phase 1",
+      "latitude": 12.8452,
+      "longitude": 77.6602,
+      "daily_orders": 390.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_05",
+      "name": "Electronic City Phase 2",
+      "latitude": 12.8398,
+      "longitude": 77.677,
+      "daily_orders": 260.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_06",
+      "name": "HSR Layout",
+      "latitude": 12.9121,
+      "longitude": 77.6446,
+      "daily_orders": 450.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_07",
+      "name": "BTM Layout",
+      "latitude": 12.9166,
+      "longitude": 77.6101,
+      "daily_orders": 310.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_08",
+      "name": "Jayanagar",
+      "latitude": 12.9308,
+      "longitude": 77.5838,
+      "daily_orders": 340.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_09",
+      "name": "JP Nagar",
+      "latitude": 12.9063,
+      "longitude": 77.5857,
+      "daily_orders": 290.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_10",
+      "name": "Banashankari",
+      "latitude": 12.9255,
+      "longitude": 77.5468,
+      "daily_orders": 230.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_11",
+      "name": "Malleshwaram",
+      "latitude": 13.0031,
+      "longitude": 77.5643,
+      "daily_orders": 280.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_12",
+      "name": "Rajajinagar",
+      "latitude": 12.9982,
+      "longitude": 77.553,
+      "daily_orders": 260.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_13",
+      "name": "Basavanagudi",
+      "latitude": 12.9421,
+      "longitude": 77.5753,
+      "daily_orders": 240.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_14",
+      "name": "Hebbal",
+      "latitude": 13.0358,
+      "longitude": 77.597,
+      "daily_orders": 320.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_15",
+      "name": "Yelahanka",
+      "latitude": 13.1007,
+      "longitude": 77.5963,
+      "daily_orders": 270.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_16",
+      "name": "Bellandur",
+      "latitude": 12.9304,
+      "longitude": 77.6784,
+      "daily_orders": 460.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_17",
+      "name": "Sarjapur Road",
+      "latitude": 12.9116,
+      "longitude": 77.6744,
+      "daily_orders": 350.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_18",
+      "name": "Marathahalli",
+      "latitude": 12.9591,
+      "longitude": 77.6974,
+      "daily_orders": 410.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_19",
+      "name": "MG Road",
+      "latitude": 12.9756,
+      "longitude": 77.6066,
+      "daily_orders": 310.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_20",
+      "name": "Shivajinagar",
+      "latitude": 12.9863,
+      "longitude": 77.6022,
+      "daily_orders": 220.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_21",
+      "name": "Frazer Town",
+      "latitude": 12.9968,
+      "longitude": 77.613,
+      "daily_orders": 190.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_22",
+      "name": "Kalyan Nagar",
+      "latitude": 13.0221,
+      "longitude": 77.6403,
+      "daily_orders": 280.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_23",
+      "name": "Kammanahalli",
+      "latitude": 13.0094,
+      "longitude": 77.6378,
+      "daily_orders": 210.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_24",
+      "name": "RT Nagar",
+      "latitude": 13.0247,
+      "longitude": 77.5948,
+      "daily_orders": 180.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_25",
+      "name": "Yeshwanthpur",
+      "latitude": 13.0238,
+      "longitude": 77.5529,
+      "daily_orders": 290.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_26",
+      "name": "Peenya Industrial",
+      "latitude": 13.0285,
+      "longitude": 77.5197,
+      "daily_orders": 160.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_27",
+      "name": "Vijayanagar",
+      "latitude": 12.9719,
+      "longitude": 77.5306,
+      "daily_orders": 250.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_28",
+      "name": "Nagarbhavi",
+      "latitude": 12.961,
+      "longitude": 77.5097,
+      "daily_orders": 170.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_29",
+      "name": "Kengeri",
+      "latitude": 12.9177,
+      "longitude": 77.4838,
+      "daily_orders": 150.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_30",
+      "name": "Kanakapura Road",
+      "latitude": 12.8702,
+      "longitude": 77.551,
+      "daily_orders": 210.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_31",
+      "name": "Bannerghatta Road",
+      "latitude": 12.8876,
+      "longitude": 77.5971,
+      "daily_orders": 280.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_32",
+      "name": "Mahadevapura",
+      "latitude": 12.9901,
+      "longitude": 77.6953,
+      "daily_orders": 370.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_33",
+      "name": "KR Puram",
+      "latitude": 13.0075,
+      "longitude": 77.6959,
+      "daily_orders": 310.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_34",
+      "name": "Hennur",
+      "latitude": 13.045,
+      "longitude": 77.6534,
+      "daily_orders": 220.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_35",
+      "name": "Vidyaranyapura",
+      "latitude": 13.0783,
+      "longitude": 77.5588,
+      "daily_orders": 180.0,
+      "capacity": null
+    },
+    {
+      "neighborhood_id": "BLR_36",
+      "name": "Jalahalli",
+      "latitude": 13.0537,
+      "longitude": 77.5412,
+      "daily_orders": 170.0,
+      "capacity": null
+    }
+  ],
+  "is_synthetic_ai": false,
+  "dataset_type": "demo",
+  "badge_text": null,
+  "scope": null,
+  "seed": null,
+  "data_source": null,
+  "source_label": null
+}

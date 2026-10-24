@@ -1,0 +1,71 @@
+{
+  "points": [
+    {
+      "p": 1,
+      "delivery_cost": 62206.27,
+      "infrastructure_cost": 15000.0,
+      "combined_cost": 77206.27,
+      "weighted_distance_km": 88866.1,
+      "is_feasible": true,
+      "warehouses_open": [
+        "BLR_19"
+      ]
+    },
+    {
+      "p": 2,
+      "delivery_cost": 47005.07,
+      "infrastructure_cost": 30000.0,
+      "combined_cost": 77005.07,
+      "weighted_distance_km": 67150.1,
+      "is_feasible": true,
+      "warehouses_open": [
+        "BLR_06",
+        "BLR_11"
+      ]
+    },
+    {
+      "p": 3,
+      "delivery_cost": 36892.59,
+      "infrastructure_cost": 45000.0,
+      "combined_cost": 81892.59,
+      "weighted_distance_km": 52703.7,
+      "is_feasible": true,
+      "warehouses_open": [
+        "BLR_07",
+        "BLR_18",
+        "BLR_24"
+      ]
+    },
+    {
+      "p": 4,
+      "delivery_cost": 31707.90,
+      "infrastructure_cost": 60000.0,
+      "combined_cost": 91707.90,
+      "weighted_distance_km": 45297.0,
+      "is_feasible": true,
+      "warehouses_open": [
+        "BLR_08",
+        "BLR_17",
+        "BLR_24",
+        "BLR_32"
+      ]
+    },
+    {
+      "p": 5,
+      "delivery_cost": 27636.77,
+      "infrastructure_cost": 75000.0,
+      "combined_cost": 102636.77,
+      "weighted_distance_km": 39481.1,
+      "is_feasible": true,
+      "warehouses_open": [
+        "BLR_08",
+        "BLR_17",
+        "BLR_21",
+        "BLR_25",
+        "BLR_32"
+      ]
+    }
+  ],
+  "fixed_cost_per_warehouse": 15000.0,
+  "cost_per_km": 35.0
+}

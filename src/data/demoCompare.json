@@ -1,0 +1,57 @@
+{
+  "baseline": {
+    "label": "Single-Warehouse Reference Baseline",
+    "warehouses_count": 1,
+    "warehouses_open": [
+      "BLR_19"
+    ],
+    "total_delivery_cost": 62206.27,
+    "total_infrastructure_cost": 15000.0,
+    "combined_total_cost": 77206.27,
+    "total_distance_km": 17.3,
+    "weighted_distance_km": 88866.1,
+    "avg_capacity_utilization_pct": 100.0,
+    "estimated_co2_kg_per_day": 130.6
+  },
+  "optimized": {
+    "label": "Optimized Network (3 Warehouses)",
+    "warehouses_count": 3,
+    "warehouses_open": [
+      "BLR_07",
+      "BLR_18",
+      "BLR_24"
+    ],
+    "total_delivery_cost": 36892.61,
+    "total_infrastructure_cost": 45000.0,
+    "combined_total_cost": 81892.61,
+    "total_distance_km": 10.2,
+    "weighted_distance_km": 52703.7,
+    "avg_capacity_utilization_pct": 66.7,
+    "estimated_co2_kg_per_day": 77.4
+  },
+  "cost_delta": 4686.34,
+  "cost_pct_change": 6.1,
+  "distance_delta_km": -36162.4,
+  "distance_pct_change": -40.7,
+  "weighted_distance_delta": -36162.4,
+  "weighted_distance_pct_change": -40.7,
+  "estimated_monthly_savings": -140590.2,
+  "co2_delta_kg": -53.2,
+  "co2_pct_change": -40.7,
+  "assumptions": {
+    "cost_per_km": 35.0,
+    "fixed_cost_per_warehouse": 15000.0,
+    "warehouse_capacity": 4000.0,
+    "radius_max_km": null,
+    "routing_mode": "haversine",
+    "priority_preset": "cost",
+    "p": 3,
+    "auto_size": false,
+    "p_max": null,
+    "include_cvrp": false,
+    "vehicle_capacity": 250,
+    "vehicle_fixed_cost": 150.0,
+    "time_window_start": null,
+    "time_window_end": null
+  }
+}
