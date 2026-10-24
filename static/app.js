@@ -350,12 +350,9 @@ function toggleAgentDrawer(open, optionalMode = null) {
 function updateAgentFabVisibility(viewId) {
   const fab = document.getElementById("btnOpenAgentDrawer");
   if (!fab) return;
-  // Accessible across all actionable screens
-  if (viewId !== "viewLanding" && viewId !== "viewMethodology") {
-    fab.classList.add("visible");
-  } else {
-    fab.classList.remove("visible");
-  }
+  // Accessible across all screens
+  fab.classList.add("visible");
+  fab.style.display = "flex";
 }
 
 function appendAgentMessage(text, role = "agent", targetContainerId = "agentSetupContainer") {
@@ -2204,6 +2201,27 @@ function setupEventListeners() {
     btnOpenAgent.addEventListener("click", () => toggleAgentDrawer(true));
   }
 
+  const navAgentAssistant = document.getElementById("navAgentAssistant");
+  if (navAgentAssistant) {
+    navAgentAssistant.addEventListener("click", () => toggleAgentDrawer(true));
+  }
+
+  const btnHeaderAgentAssistant = document.getElementById("btnHeaderAgentAssistant");
+  if (btnHeaderAgentAssistant) {
+    btnHeaderAgentAssistant.addEventListener("click", () => toggleAgentDrawer(true));
+  }
+
+  const btnLandingOpenAgent = document.getElementById("btnLandingOpenAgent");
+  if (btnLandingOpenAgent) {
+    btnLandingOpenAgent.addEventListener("click", () => toggleAgentDrawer(true));
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      toggleAgentDrawer(false);
+    }
+  });
+
   const btnCloseAgent = document.getElementById("btnCloseAgentDrawer");
   if (btnCloseAgent) {
     btnCloseAgent.addEventListener("click", () => toggleAgentDrawer(false));
@@ -2364,6 +2382,7 @@ function setupEventListeners() {
 window.addEventListener("DOMContentLoaded", async () => {
   initMaps();
   setupEventListeners();
+  updateAgentFabVisibility(appState.currentView);
   await checkHealth();
   await loadDemoData();
 });

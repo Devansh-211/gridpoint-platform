@@ -1172,7 +1172,7 @@ input[type="range"].gp-range {
 
 .gp-toast {
   position: fixed;
-  bottom: var(--gp-space-6);
+  bottom: calc(var(--gp-space-6) + 60px);
   right: var(--gp-space-6);
   padding: var(--gp-space-3) var(--gp-space-4);
   background-color: var(--gp-text-primary);
@@ -1209,7 +1209,7 @@ input[type="range"].gp-range {
    CONVERSATIONAL LOGISTICS AGENT (PHASE 2)
    ========================================================================== */
 
-/* Floating Action Button (Visible on Dashboard & Network Configuration) */
+/* Floating Action Button (Always accessible across screens) */
 .gp-agent-fab {
   position: fixed;
   bottom: var(--gp-space-6);
@@ -1223,12 +1223,12 @@ input[type="range"].gp-range {
   font-family: var(--gp-font-family-sans);
   font-size: 13px;
   font-weight: var(--gp-weight-semibold);
-  display: none;
+  display: flex;
   align-items: center;
   gap: var(--gp-space-2);
   box-shadow: var(--gp-shadow-lg);
   cursor: pointer;
-  z-index: 900;
+  z-index: 1200;
   transition: all var(--gp-transition-fast);
 }
 
