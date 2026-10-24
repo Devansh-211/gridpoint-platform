@@ -9,6 +9,9 @@ const appState = {
   sessionId: "default",
   neighborhoods: [],
   configMode: "manual", // "manual" or "auto"
+  currency: "INR", // "INR" (canonical) or "USD"
+  costKmInr: 35, // Canonical storage unit in INR
+  fixedCostInr: 15000, // Canonical storage unit in INR
   lastOptimize: null,
   lastCompare: null,
   lastTradeoff: null,
@@ -36,6 +39,254 @@ const appState = {
   },
   tradeoffChartInstance: null,
 };
+
+// ============================================================================
+// CURRENCY SYSTEM (Canonical INR, USD Derived via Benchmark FX 85 INR/USD)
+// ============================================================================
+
+const FX_INR_PER_USD = 85;
+const DEFAULT_DELIVERY_COST_PER_KM_INR = 35;
+const DEFAULT_FIXED_WAREHOUSE_LEASE_INR = 15000;
+
+function currencySymbol(currency) {
+  return currency === "INR" ? "₹" : "$";
+}
+
+function convertInrToDisplay(inrValue, currency) {
+  if (!Number.isFinite(inrValue)) return 0;
+  return currency === "INR" ? inrValue : inrValue / FX_INR_PER_USD;
+}
+
+function convertInput(displayValue, currency) {
+  if (!Number.isFinite(displayValue)) return 0;
+  return currency === "INR" ? displayValue : displayValue * FX_INR_PER_USD;
+}
+
+function formatMoney(inrValue, currency = appState.currency, opts = {}) {
+  if (!Number.isFinite(inrValue)) return "—";
+
+  const { compact = false, showSymbol = true, signed = false } = opts;
+  const symbol = showSymbol ? currencySymbol(currency) : "";
+  const isNegative = inrValue < 0;
+  const absInr = Math.abs(inrValue);
+  const displayVal = convertInrToDisplay(absInr, currency);
+
+  let formattedValue;
+
+  if (compact) {
+    if (currency === "INR") {
+      if (absInr >= 10000000) {
+        const cr = absInr / 10000000;
+        formattedValue = `${cr.toFixed(cr >= 10 ? 1 : 2)} Cr`;
+      } else if (absInr >= 100000) {
+        const lk = absInr / 100000;
+        formattedValue = `${lk.toFixed(lk >= 10 ? 1 : 2)} L`;
+      } else if (absInr >= 1000) {
+        const k = absInr / 1000;
+        formattedValue = `${k.toFixed(1)}k`;
+      } else {
+        formattedValue = absInr.toFixed(opts.decimals !== undefined ? opts.decimals : 0);
+      }
+    } else {
+      if (displayVal >= 1000000) {
+        const m = displayVal / 1000000;
+        formattedValue = `${m.toFixed(m >= 10 ? 1 : 2)}M`;
+      } else if (displayVal >= 1000) {
+        const k = displayVal / 1000;
+        formattedValue = `${k.toFixed(k >= 10 ? 1 : 2)}k`;
+      } else {
+        formattedValue = displayVal.toFixed(opts.decimals !== undefined ? opts.decimals : 0);
+      }
+    }
+  } else {
+    const decimals = opts.decimals !== undefined ? opts.decimals : 2;
+    const locale = currency === "INR" ? "en-IN" : "en-US";
+    formattedValue = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(displayVal);
+  }
+
+  if (isNegative) {
+    return `-${symbol}${formattedValue}`;
+  }
+  if (signed && inrValue > 0) {
+    return `+${symbol}${formattedValue}`;
+  }
+  return `${symbol}${formattedValue}`;
+}
+
+function setCurrency(newCurrency) {
+  if (newCurrency !== "INR" && newCurrency !== "USD") return;
+  appState.currency = newCurrency;
+
+  // 1. Update Header Toggle Buttons
+  const btnInr = document.getElementById("btnCurrINR");
+  const btnUsd = document.getElementById("btnCurrUSD");
+  if (btnInr && btnUsd) {
+    if (newCurrency === "INR") {
+      btnInr.classList.add("active");
+      btnInr.setAttribute("aria-checked", "true");
+      btnInr.setAttribute("tabindex", "0");
+      btnUsd.classList.remove("active");
+      btnUsd.setAttribute("aria-checked", "false");
+      btnUsd.setAttribute("tabindex", "-1");
+    } else {
+      btnUsd.classList.add("active");
+      btnUsd.setAttribute("aria-checked", "true");
+      btnUsd.setAttribute("tabindex", "0");
+      btnInr.classList.remove("active");
+      btnInr.setAttribute("aria-checked", "false");
+      btnInr.setAttribute("tabindex", "-1");
+    }
+  }
+
+  // 2. Update Network Config Input Labels & Values
+  const sym = currencySymbol(newCurrency);
+  const lblCostKm = document.getElementById("lblCostKm");
+  if (lblCostKm) lblCostKm.textContent = `Delivery Cost per km (${sym})`;
+  const lblFixedCost = document.getElementById("lblFixedCost");
+  if (lblFixedCost) lblFixedCost.textContent = `Fixed Warehouse Lease (${sym}/site/day)`;
+  const autoCostNote = document.getElementById("autoCostSummaryNote");
+  if (autoCostNote) autoCostNote.textContent = `Daily Transit Cost (${sym}/km) + Facility Leases (${sym}/site)`;
+
+  const inputCostKm = document.getElementById("inputCostKm");
+  const inputFixedCost = document.getElementById("inputFixedCost");
+  if (inputCostKm) {
+    inputCostKm.value = newCurrency === "INR"
+      ? Math.round(appState.costKmInr)
+      : Number((appState.costKmInr / FX_INR_PER_USD).toFixed(2));
+    inputCostKm.step = newCurrency === "INR" ? "1" : "0.01";
+  }
+  if (inputFixedCost) {
+    inputFixedCost.value = newCurrency === "INR"
+      ? Math.round(appState.fixedCostInr)
+      : Number((appState.fixedCostInr / FX_INR_PER_USD).toFixed(0));
+    inputFixedCost.step = newCurrency === "INR" ? "500" : "5";
+  }
+
+  // 3. Update Results Screen (Assumptions Strip, KPIs, Comparison Table)
+  if (appState.lastOptimize) {
+    updateResultsCurrencyDisplays(appState.lastOptimize);
+  }
+
+  // 4. Update Dashboard KPIs
+  updateDashboardStats();
+
+  // 5. Update Tradeoff Curve if present
+  if (appState.lastTradeoff) {
+    renderTradeoffChart(appState.lastTradeoff);
+  }
+
+  // 6. Update Scenario Lab if present
+  if (appState.lastScenario) {
+    updateScenarioCurrencyDisplays(appState.lastScenario);
+  }
+
+  showToast(`Currency display changed to ${newCurrency} (${sym})`);
+}
+
+function updateResultsCurrencyDisplays(data) {
+  if (!data) return;
+  const costKm = data.assumptions?.cost_per_km || appState.costKmInr;
+  const fixedLease = data.assumptions?.fixed_cost_per_warehouse || appState.fixedCostInr;
+  const rMax = data.assumptions?.radius_max_km ? `${data.assumptions.radius_max_km} km` : "No Limit";
+  const distMode = (data.assumptions?.routing_mode === "road_detour") ? "Road Detour (1.35x Proxy)" : "Geographic Delivery Distance (Haversine)";
+
+  const strip = document.getElementById("resultsAssumptionsStrip");
+  if (strip) {
+    strip.innerHTML = `
+      <div><strong>Delivery Cost / km:</strong> ${formatMoney(costKm, appState.currency)} (Estimated)</div>
+      <div><strong>Facility Lease:</strong> ${formatMoney(fixedLease, appState.currency)} / site / day</div>
+      <div><strong>Max Service Radius:</strong> ${rMax}</div>
+      <div><strong>Distance Metric:</strong> ${distMode}</div>
+      <div><strong>Solver Status:</strong> ${data.solver_message || "Optimal"}</div>
+    `;
+  }
+
+  const kpiCost = document.getElementById("kpiCost");
+  if (kpiCost && data.total_delivery_cost !== undefined) {
+    kpiCost.textContent = formatMoney(data.total_delivery_cost, appState.currency);
+  }
+  const kpiMonthly = document.getElementById("kpiMonthlySavings");
+  if (kpiMonthly && data.estimated_monthly_savings !== undefined) {
+    kpiMonthly.textContent = formatMoney(data.estimated_monthly_savings, appState.currency, { compact: true });
+  }
+
+  if (appState.lastCompare) {
+    const kpiCostBaseline = document.getElementById("kpiCostBaseline");
+    if (kpiCostBaseline && appState.lastCompare.baseline) {
+      kpiCostBaseline.textContent = `Baseline: ${formatMoney(appState.lastCompare.baseline.total_delivery_cost, appState.currency)} / day`;
+    }
+    renderBenchmarkTable(appState.lastCompare);
+  }
+}
+
+function renderBenchmarkTable(data) {
+  const tbody = document.getElementById("tbodyBenchmark");
+  if (!tbody || !data || !data.baseline || !data.optimized) return;
+  const sym = currencySymbol(appState.currency);
+
+  const costPct = (data.cost_pct_change !== undefined ? data.cost_pct_change : 0).toFixed(1);
+  const distPct = (data.distance_pct_change !== undefined ? data.distance_pct_change : (data.weighted_distance_pct_change || 0)).toFixed(1);
+  const distDelta = Math.abs(data.weighted_distance_delta !== undefined ? data.weighted_distance_delta : (data.distance_delta_km || 0)).toLocaleString();
+  const co2Pct = (data.co2_pct_change !== undefined ? data.co2_pct_change : 0).toFixed(1);
+  const costDelta = Math.abs(data.cost_delta !== undefined ? data.cost_delta : 0);
+
+  tbody.innerHTML = `
+    <tr>
+      <td><strong>Simulated Delivery Cost (${sym}/day)</strong></td>
+      <td>${formatMoney(data.baseline.total_delivery_cost, appState.currency)}</td>
+      <td><strong>${formatMoney(data.optimized.total_delivery_cost, appState.currency)}</strong></td>
+      <td style="color:var(--gp-success); font-weight:700;">-${formatMoney(costDelta, appState.currency)}</td>
+      <td><span class="gp-delta-chip gp-delta-positive">${costPct}%</span></td>
+    </tr>
+    <tr>
+      <td><strong>Demand-Weighted Delivery Distance (ord·km)</strong></td>
+      <td>${data.baseline.weighted_distance_km.toLocaleString()}</td>
+      <td><strong>${data.optimized.weighted_distance_km.toLocaleString()}</strong></td>
+      <td style="color:var(--gp-success); font-weight:700;">-${distDelta}</td>
+      <td><span class="gp-delta-chip gp-delta-positive">${distPct}%</span></td>
+    </tr>
+    <tr>
+      <td><strong>Fixed Facility Lease (${sym}/day)</strong></td>
+      <td>${formatMoney(data.baseline.total_infrastructure_cost, appState.currency)}</td>
+      <td>${formatMoney(data.optimized.total_infrastructure_cost, appState.currency)}</td>
+      <td>+${formatMoney(data.optimized.total_infrastructure_cost - data.baseline.total_infrastructure_cost, appState.currency)}</td>
+      <td><span class="gp-delta-chip gp-delta-neutral">+${((data.optimized.warehouses_count - 1) * 100).toFixed(0)}%</span></td>
+    </tr>
+    <tr style="background:var(--gp-surface-sunken);">
+      <td><strong>Combined System Cost (${sym}/day)</strong></td>
+      <td>${formatMoney(data.baseline.combined_total_cost, appState.currency)}</td>
+      <td><strong>${formatMoney(data.optimized.combined_total_cost, appState.currency)}</strong></td>
+      <td style="color:${data.optimized.combined_total_cost < data.baseline.combined_total_cost ? 'var(--gp-success)' : 'var(--gp-text-primary)'}; font-weight:700;">
+        ${data.optimized.combined_total_cost < data.baseline.combined_total_cost ? '-' : '+'}${formatMoney(Math.abs(data.optimized.combined_total_cost - data.baseline.combined_total_cost), appState.currency)}
+      </td>
+      <td><span class="gp-delta-chip ${data.optimized.combined_total_cost < data.baseline.combined_total_cost ? 'gp-delta-positive' : 'gp-delta-neutral'}">
+        ${(((data.optimized.combined_total_cost - data.baseline.combined_total_cost) / data.baseline.combined_total_cost) * 100).toFixed(1)}%
+      </span></td>
+    </tr>
+    <tr>
+      <td><strong>Estimated Daily CO₂ Footprint (kg)</strong></td>
+      <td>${data.baseline.estimated_co2_kg_per_day.toFixed(1)} kg</td>
+      <td><strong>${data.optimized.estimated_co2_kg_per_day.toFixed(1)} kg</strong></td>
+      <td style="color:var(--gp-success); font-weight:700;">-${Math.abs(data.co2_delta_kg).toFixed(1)} kg</td>
+      <td><span class="gp-delta-chip gp-delta-positive">${co2Pct}%</span></td>
+    </tr>
+    <tr>
+      <td><strong>Estimated 30-Day Monthly Savings</strong></td>
+      <td>${formatMoney(0, appState.currency)}</td>
+      <td colspan="3"><strong style="color:var(--gp-success); font-size:15px;">${formatMoney(data.estimated_monthly_savings, appState.currency)}</strong> / month</td>
+    </tr>
+  `;
+}
+
+function updateScenarioCurrencyDisplays(data) {
+  const scCard = document.getElementById("scenarioCostCard");
+  if (scCard && data && data.scenario_cost !== undefined) {
+    scCard.textContent = formatMoney(data.scenario_cost, appState.currency);
+  }
+}
 
 // Deterministic Cluster Color Palette for Warehouses and Zones
 const CLUSTER_COLORS = [
@@ -75,8 +326,8 @@ const agentState = {
     warehouse_count: 3,
     warehouse_capacity: 4000,
     max_service_radius_km: 25.0,
-    cost_per_km: 1.25,
-    fixed_cost_per_warehouse: 300.0,
+    cost_per_km: 35.0,
+    fixed_cost_per_warehouse: 15000.0,
     priority_preset: "cost",
     include_cvrp: false,
     vehicle_capacity: 250,
@@ -1013,9 +1264,18 @@ async function runOptimization() {
   const p = parseInt(document.getElementById("inputConfigP")?.value) || 3;
   const pMax = parseInt(document.getElementById("inputConfigPMax")?.value) || 6;
   const cap = parseFloat(document.getElementById("inputConfigCap").value) || 4000;
-  const radius = document.getElementById("inputConfigRadius").value ? parseFloat(document.getElementById("inputConfigRadius").value) : null;
-  const costKm = parseFloat(document.getElementById("inputCostKm").value) || 1.25;
-  const fixedCost = parseFloat(document.getElementById("inputFixedCost").value) || 300;
+  const radius = document.getElementById("inputConfigRadius")?.value ? parseFloat(document.getElementById("inputConfigRadius").value) : null;
+  const rawCostKm = parseFloat(document.getElementById("inputCostKm")?.value);
+  if (!isNaN(rawCostKm) && rawCostKm > 0) {
+    appState.costKmInr = convertInput(rawCostKm, appState.currency);
+  }
+  const rawFixedCost = parseFloat(document.getElementById("inputFixedCost")?.value);
+  if (!isNaN(rawFixedCost) && rawFixedCost >= 0) {
+    appState.fixedCostInr = convertInput(rawFixedCost, appState.currency);
+  }
+
+  const costKm = appState.costKmInr;
+  const fixedCost = appState.fixedCostInr;
   const mode = document.getElementById("selectDistanceMode").value || "haversine";
   const includeCvrp = document.getElementById("chkIncludeCvrp").checked || document.getElementById("chkFleetEnableCvrp").checked;
 
@@ -1092,19 +1352,8 @@ async function runOptimization() {
 // ============================================================================
 
 function renderResultsScreen(data) {
-  // 1. Update Assumptions Strip
-  const costKm = data.assumptions.cost_per_km || 1.25;
-  const fixedLease = data.assumptions.fixed_cost_per_warehouse || 300;
-  const rMax = data.assumptions.radius_max_km ? `${data.assumptions.radius_max_km} km` : "No Limit";
-  const distMode = data.assumptions.routing_mode === "haversine" ? "Geographic Delivery Distance (Haversine)" : "Road Detour (1.35x Proxy)";
-
-  document.getElementById("resultsAssumptionsStrip").innerHTML = `
-    <div><strong>Delivery Cost / km:</strong> $${costKm.toFixed(2)} (Estimated)</div>
-    <div><strong>Facility Lease:</strong> $${fixedLease.toFixed(0)} / site / day</div>
-    <div><strong>Max Service Radius:</strong> ${rMax}</div>
-    <div><strong>Distance Metric:</strong> ${distMode}</div>
-    <div><strong>Solver Status:</strong> ${data.solver_message}</div>
-  `;
+  // 1. Update Results Currency & Assumptions
+  updateResultsCurrencyDisplays(data);
 
   // 1.5 Update Throughput Co-Dependency & Headroom Banner
   const totalCap = data.total_system_capacity || (data.warehouses ? data.warehouses.reduce((s, w) => s + (w.capacity || w.capacity_ceiling || 0), 0) : 0);
@@ -1153,13 +1402,13 @@ function renderResultsScreen(data) {
   }
 
   // 2. Executive KPI Cards
-  document.getElementById("kpiCost").textContent = `$${data.total_delivery_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.getElementById("kpiCost").textContent = formatMoney(data.total_delivery_cost, appState.currency);
   document.getElementById("kpiDistance").innerHTML = `${data.total_weighted_distance_km.toLocaleString(undefined, { maximumFractionDigits: 1 })} <span class="gp-kpi-unit">ord·km</span>`;
   document.getElementById("kpiWarehouses").innerHTML = `${data.warehouses.length} <span class="gp-kpi-unit">sites</span>`;
   document.getElementById("kpiWarehousesBadge").textContent = data.auto_size ? `Auto (${data.p} sites)` : `p = ${data.p}`;
   document.getElementById("kpiSolverStatus").textContent = `Status: ${data.status}`;
   document.getElementById("kpiFastDelivery").textContent = `${data.fast_delivery_coverage_pct.toFixed(1)}%`;
-  document.getElementById("kpiMonthlySavings").textContent = `$${data.estimated_monthly_savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.getElementById("kpiMonthlySavings").textContent = formatMoney(data.estimated_monthly_savings, appState.currency, { compact: true });
   document.getElementById("kpiCO2").innerHTML = `${data.estimated_co2_kg_per_day.toFixed(1)} <span class="gp-kpi-unit">kg</span>`;
   document.getElementById("kpiCO2Badge").textContent = `${data.co2_reduction_pct.toFixed(1)}%`;
 
@@ -1320,59 +1569,11 @@ async function fetchBaselineComparison() {
     // Update KPI badges with baseline deltas
     document.getElementById("kpiCostBadge").textContent = `${data.cost_pct_change.toFixed(1)}%`;
     document.getElementById("kpiDistanceBadge").textContent = `${data.distance_pct_change.toFixed(1)}%`;
-    document.getElementById("kpiCostBaseline").textContent = `Baseline: $${data.baseline.total_delivery_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / day`;
+    document.getElementById("kpiCostBaseline").textContent = `Baseline: ${formatMoney(data.baseline.total_delivery_cost, appState.currency)} / day`;
     document.getElementById("kpiDistanceBaseline").textContent = `Baseline: ${data.baseline.weighted_distance_km.toLocaleString(undefined, { maximumFractionDigits: 1 })} ord·km`;
 
     // Populate Comparison Table
-    const tbody = document.getElementById("tbodyBenchmark");
-    if (!tbody) return;
-
-    tbody.innerHTML = `
-      <tr>
-        <td><strong>Simulated Delivery Cost ($/day)</strong></td>
-        <td>$${data.baseline.total_delivery_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td><strong>$${data.optimized.total_delivery_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
-        <td style="color:var(--gp-success); font-weight:700;">-$${Math.abs(data.cost_delta).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td><span class="gp-delta-chip gp-delta-positive">${data.cost_pct_change.toFixed(1)}%</span></td>
-      </tr>
-      <tr>
-        <td><strong>Demand-Weighted Delivery Distance (ord·km)</strong></td>
-        <td>${data.baseline.weighted_distance_km.toLocaleString()}</td>
-        <td><strong>${data.optimized.weighted_distance_km.toLocaleString()}</strong></td>
-        <td style="color:var(--gp-success); font-weight:700;">-${Math.abs(data.weighted_distance_delta).toLocaleString()}</td>
-        <td><span class="gp-delta-chip gp-delta-positive">${data.weighted_distance_pct_change.toFixed(1)}%</span></td>
-      </tr>
-      <tr>
-        <td><strong>Fixed Facility Lease ($/day)</strong></td>
-        <td>$${data.baseline.total_infrastructure_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td>$${data.optimized.total_infrastructure_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td>+$${(data.optimized.total_infrastructure_cost - data.baseline.total_infrastructure_cost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td><span class="gp-delta-chip gp-delta-neutral">+${((data.optimized.warehouses_count - 1) * 100).toFixed(0)}%</span></td>
-      </tr>
-      <tr style="background:var(--gp-surface-sunken);">
-        <td><strong>Combined System Cost ($/day)</strong></td>
-        <td>$${data.baseline.combined_total_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td><strong>$${data.optimized.combined_total_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
-        <td style="color:${data.optimized.combined_total_cost < data.baseline.combined_total_cost ? 'var(--gp-success)' : 'var(--gp-text-primary)'}; font-weight:700;">
-          ${data.optimized.combined_total_cost < data.baseline.combined_total_cost ? '-' : '+'}$${Math.abs(data.optimized.combined_total_cost - data.baseline.combined_total_cost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </td>
-        <td><span class="gp-delta-chip ${data.optimized.combined_total_cost < data.baseline.combined_total_cost ? 'gp-delta-positive' : 'gp-delta-neutral'}">
-          ${(((data.optimized.combined_total_cost - data.baseline.combined_total_cost) / data.baseline.combined_total_cost) * 100).toFixed(1)}%
-        </span></td>
-      </tr>
-      <tr>
-        <td><strong>Estimated Daily CO₂ Footprint (kg)</strong></td>
-        <td>${data.baseline.estimated_co2_kg_per_day.toFixed(1)} kg</td>
-        <td><strong>${data.optimized.estimated_co2_kg_per_day.toFixed(1)} kg</strong></td>
-        <td style="color:var(--gp-success); font-weight:700;">-${Math.abs(data.co2_delta_kg).toFixed(1)} kg</td>
-        <td><span class="gp-delta-chip gp-delta-positive">${data.co2_pct_change.toFixed(1)}%</span></td>
-      </tr>
-      <tr>
-        <td><strong>Estimated 30-Day Monthly Savings</strong></td>
-        <td>$0.00</td>
-        <td colspan="3"><strong style="color:var(--gp-success); font-size:15px;">$${data.estimated_monthly_savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> / month</td>
-      </tr>
-    `;
+    renderBenchmarkTable(data);
   } catch (err) {
     console.error("Baseline comparison failed:", err);
   }
@@ -1384,8 +1585,8 @@ async function fetchBaselineComparison() {
 
 async function fetchTradeoffCurve() {
   try {
-    const fixedCost = parseFloat(document.getElementById("inputFixedCost").value) || 300;
-    const costKm = parseFloat(document.getElementById("inputCostKm").value) || 1.25;
+    const fixedCost = appState.fixedCostInr;
+    const costKm = appState.costKmInr;
     const res = await fetch(`/api/tradeoff?session_id=${appState.sessionId}&fixed_cost=${fixedCost}&cost_per_km=${costKm}`);
     const data = await res.json();
     appState.lastTradeoff = data;
@@ -1404,10 +1605,11 @@ function renderTradeoffChart(data) {
     appState.tradeoffChartInstance.destroy();
   }
 
+  const sym = currencySymbol(appState.currency);
   const labels = data.points.map(pt => `${pt.p} Site${pt.p > 1 ? 's' : ''}`);
-  const delivCosts = data.points.map(pt => pt.delivery_cost);
-  const infraCosts = data.points.map(pt => pt.infrastructure_cost);
-  const combinedCosts = data.points.map(pt => pt.combined_cost);
+  const delivCosts = data.points.map(pt => convertInrToDisplay(pt.delivery_cost, appState.currency));
+  const infraCosts = data.points.map(pt => convertInrToDisplay(pt.infrastructure_cost, appState.currency));
+  const combinedCosts = data.points.map(pt => convertInrToDisplay(pt.combined_cost, appState.currency));
 
   appState.tradeoffChartInstance = new Chart(ctx, {
     type: "line",
@@ -1415,7 +1617,7 @@ function renderTradeoffChart(data) {
       labels: labels,
       datasets: [
         {
-          label: "Combined Total Cost ($/day)",
+          label: `Combined Total Cost (${sym}/day)`,
           data: combinedCosts,
           borderColor: "#1E8E5A",
           backgroundColor: "rgba(30, 142, 90, 0.08)",
@@ -1426,7 +1628,7 @@ function renderTradeoffChart(data) {
           fill: true,
         },
         {
-          label: "Delivery Cost ($/day)",
+          label: `Delivery Cost (${sym}/day)`,
           data: delivCosts,
           borderColor: "#3B76ED",
           borderWidth: 2,
@@ -1436,7 +1638,7 @@ function renderTradeoffChart(data) {
           tension: 0.25,
         },
         {
-          label: "Infrastructure Lease ($/day)",
+          label: `Infrastructure Lease (${sym}/day)`,
           data: infraCosts,
           borderColor: "#8A94A0",
           borderWidth: 2,
@@ -1456,7 +1658,8 @@ function renderTradeoffChart(data) {
         tooltip: {
           callbacks: {
             label: function(context) {
-              return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+              const inrVal = appState.currency === "INR" ? context.parsed.y : context.parsed.y * FX_INR_PER_USD;
+              return `${context.dataset.label}: ${formatMoney(inrVal, appState.currency)}`;
             }
           }
         }
@@ -1464,7 +1667,7 @@ function renderTradeoffChart(data) {
       scales: {
         y: {
           beginAtZero: true,
-          ticks: { callback: val => `$${val}` },
+          ticks: { callback: val => `${sym}${Number(val).toLocaleString()}` },
           grid: { color: "rgba(0, 0, 0, 0.05)" },
         },
         x: {
@@ -1751,8 +1954,8 @@ async function runScenarioSimulation(multiplier, failedWid = null, targetContain
 
   const p = (appState.lastOptimize && appState.lastOptimize.assumptions?.warehouse_count) || parseInt(document.getElementById("inputConfigP")?.value) || 3;
   const cap = (appState.lastOptimize && appState.lastOptimize.assumptions?.warehouse_capacity) || parseFloat(document.getElementById("inputConfigCap")?.value) || 4000;
-  const costKm = (appState.lastOptimize && appState.lastOptimize.assumptions?.cost_per_km) || parseFloat(document.getElementById("inputCostKm")?.value) || 1.25;
-  const fixedCost = (appState.lastOptimize && appState.lastOptimize.assumptions?.fixed_cost_per_warehouse) || parseFloat(document.getElementById("inputFixedCost")?.value) || 300;
+  const costKm = appState.costKmInr;
+  const fixedCost = appState.fixedCostInr;
 
   const payload = {
     session_id: appState.sessionId,
@@ -1811,7 +2014,7 @@ async function runScenarioSimulation(multiplier, failedWid = null, targetContain
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:var(--gp-space-3); margin-bottom:var(--gp-space-3);">
         <div style="background:var(--gp-surface); border:1px solid var(--gp-border); padding:var(--gp-space-3); border-radius:var(--gp-radius-sm);">
           <div style="font-size:11px; color:var(--gp-text-tertiary); text-transform:uppercase; font-weight:600;">Scenario Delivery Cost</div>
-          <div style="font-size:18px; font-weight:700; color:var(--gp-text-primary); margin-top:2px;">$${data.scenario_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style="font-size:18px; font-weight:700; color:var(--gp-text-primary); margin-top:2px;" id="scenarioCostCard">${formatMoney(data.scenario_cost, appState.currency)}</div>
           <div style="font-size:11px; color:${data.cost_pct_change > 0 ? 'var(--gp-danger)' : 'var(--gp-success)'}; font-weight:700; margin-top:2px;">
             ${data.cost_pct_change > 0 ? '+' : ''}${data.cost_pct_change.toFixed(1)}% vs baseline
           </div>
@@ -1881,12 +2084,20 @@ function updateDashboardStats() {
   const totalDem = appState.neighborhoods.reduce((acc, n) => acc + (n.daily_orders || 0), 0) || 10240;
   const p = parseInt(document.getElementById("inputConfigP").value) || 3;
 
-  document.getElementById("dashKpiZones").textContent = zonesCount;
-  document.getElementById("dashKpiDemand").textContent = totalDem.toLocaleString();
-  document.getElementById("dashKpiP").textContent = p;
+  const elZones = document.getElementById("dashKpiZones");
+  if (elZones) elZones.textContent = zonesCount;
+  const elDem = document.getElementById("dashKpiDemand");
+  if (elDem) elDem.textContent = totalDem.toLocaleString();
+  const elP = document.getElementById("dashKpiP");
+  if (elP) elP.textContent = p;
 
-  if (appState.lastCompare) {
-    document.getElementById("dashKpiSavings").textContent = `$${appState.lastCompare.estimated_monthly_savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const elSavings = document.getElementById("dashKpiSavings");
+  if (elSavings) {
+    if (appState.lastCompare) {
+      elSavings.textContent = formatMoney(appState.lastCompare.estimated_monthly_savings, appState.currency, { compact: true });
+    } else {
+      elSavings.textContent = formatMoney(0, appState.currency, { compact: true });
+    }
   }
 }
 
@@ -1950,6 +2161,30 @@ function setupEventListeners() {
   });
 
   // 5. Header Bar Global Actions
+  const btnInr = document.getElementById("btnCurrINR");
+  const btnUsd = document.getElementById("btnCurrUSD");
+  const pillGroup = document.getElementById("headerCurrencyPillGroup");
+
+  if (btnInr) {
+    btnInr.addEventListener("click", () => setCurrency("INR"));
+  }
+  if (btnUsd) {
+    btnUsd.addEventListener("click", () => setCurrency("USD"));
+  }
+  if (pillGroup) {
+    pillGroup.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setCurrency("USD");
+        btnUsd?.focus();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setCurrency("INR");
+        btnInr?.focus();
+      }
+    });
+  }
+
   document.getElementById("btnGlobalLoadDemo").addEventListener("click", async () => {
     await loadDemoData();
     switchView("viewResults");
@@ -2179,6 +2414,28 @@ function setupEventListeners() {
     updateLiveSummary();
     agentState.knownParams.max_service_radius_km = parseFloat(e.target.value) || 25.0;
   });
+
+  const inputCostKm = document.getElementById("inputCostKm");
+  if (inputCostKm) {
+    inputCostKm.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val > 0) {
+        appState.costKmInr = convertInput(val, appState.currency);
+        agentState.knownParams.cost_per_km = appState.costKmInr;
+      }
+    });
+  }
+
+  const inputFixedCost = document.getElementById("inputFixedCost");
+  if (inputFixedCost) {
+    inputFixedCost.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val >= 0) {
+        appState.fixedCostInr = convertInput(val, appState.currency);
+        agentState.knownParams.fixed_cost_per_warehouse = appState.fixedCostInr;
+      }
+    });
+  }
 
   // Priority Presets
   document.querySelectorAll(".gp-preset-pill").forEach(pill => {
