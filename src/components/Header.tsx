@@ -1,6 +1,6 @@
 import React from 'react';
 import { Currency } from '../types';
-import { Activity, HelpCircle } from 'lucide-react';
+import { Activity, HelpCircle, Bot } from 'lucide-react';
 
 interface HeaderProps {
   currency: Currency;
@@ -10,6 +10,7 @@ interface HeaderProps {
   isCached: boolean;
   mipGap?: number | null;
   onToggleWhy: () => void;
+  onToggleAssistant: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   isCached,
   mipGap,
   onToggleWhy,
+  onToggleAssistant,
 }) => {
   const inrRef = React.useRef<HTMLButtonElement>(null);
   const usdRef = React.useRef<HTMLButtonElement>(null);
@@ -81,8 +83,20 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Why GridPoint trigger + Solver Badge + Currency Toggle */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      {/* Right: Logistics Assistant + Why GridPoint trigger + Solver Badge + Currency Toggle */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        {/* Logistics Assistant button */}
+        <button
+          type="button"
+          id="btnLogisticsAssistant"
+          onClick={onToggleAssistant}
+          className="inline-flex items-center gap-1.5 rounded-full border border-blue-600 bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          title="Open Logistics AI Assistant"
+        >
+          <Bot className="h-3.5 w-3.5" />
+          <span>Logistics Assistant</span>
+        </button>
+
         {/* Why GridPoint pill */}
         <button
           onClick={onToggleWhy}

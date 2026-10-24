@@ -1,6 +1,6 @@
 import React from 'react';
 import * as Collapsible from '@radix-ui/react-collapsible';
-import { Zap, Upload, ChevronDown, CheckCircle2, ShieldCheck, Clock } from 'lucide-react';
+import { Zap, Upload, ChevronDown, CheckCircle2, ShieldCheck, Clock, Bot } from 'lucide-react';
 
 interface HeroProps {
   solveMs: number | null;
@@ -9,6 +9,7 @@ interface HeroProps {
   onUploadClick: () => void;
   whyOpen: boolean;
   onWhyOpenChange: (open: boolean) => void;
+  onAssistantClick?: () => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
@@ -18,6 +19,7 @@ export const Hero: React.FC<HeroProps> = ({
   onUploadClick,
   whyOpen,
   onWhyOpenChange,
+  onAssistantClick,
 }) => {
   const comparisonItems = [
     {
@@ -94,6 +96,18 @@ export const Hero: React.FC<HeroProps> = ({
             <Upload className="h-4 w-4 text-gp-text-secondary" />
             <span>📂 Upload Custom Zones CSV</span>
           </button>
+
+          {onAssistantClick && (
+            <button
+              type="button"
+              id="btnHeroAssistant"
+              onClick={onAssistantClick}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            >
+              <Bot className="h-4 w-4 text-blue-600" />
+              <span>🤖 Logistics AI Assistant</span>
+            </button>
+          )}
         </div>
 
         {/* Value Prop Badges */}
