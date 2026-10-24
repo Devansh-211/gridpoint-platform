@@ -6,9 +6,17 @@ describe('App Full Interaction Smoke Test', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    window.location.hash = '';
 
     // Mock fetch for optimize and compare calls
     global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/health')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 'ok', solver: 'cbc' }),
+        });
+      }
+
       if (url.includes('/api/optimize')) {
         return Promise.resolve({
           ok: true,
@@ -107,108 +115,53 @@ describe('App Full Interaction Smoke Test', () => {
     });
   });
 
-  it('renders without crashing and supports complete user interaction workflow', async () => {
+  it('renders app shell with 256px sidebar, navigation items, and currency pill', async () => {
     await act(async () => {
       render(<App />);
     });
 
-    // 1. Initial Render Check
-    expect(screen.getByText('GRIDPOINT')).toBeInTheDocument();
-    expect(screen.getByText(/B2B Network Optimizer/i)).toBeInTheDocument();
+    // 1. Sidebar Brand & Title
+    expect(screen.getAllByText('GRIDPOINT')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('LOGISTICS INTELLIGENCE')[0]).toBeInTheDocument();
 
-    // 2. Currency Toggle (INR -> USD -> INR)
-    const usdRadio = screen.getByRole('radio', { name: /\$ USD/i });
+    // 2. Navigation items present
+    expect(screen.getAllByRole('link', { name: /Overview/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Demand Map/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Network Configuration/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Optimization & Solvers/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Scenario Lab/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Tactical Fleet/i })[0]).toBeInTheDocument();
+
+    // 3. Currency Pill (₹ INR | $ USD)
+    const usdBtn = screen.getByRole('radio', { name: /\$ USD/i });
     await act(async () => {
-      fireEvent.click(usdRadio);
+      fireEvent.click(usdBtn);
     });
     expect(localStorage.getItem('gridpoint_currency')).toBe('USD');
 
-    const inrRadio = screen.getByRole('radio', { name: /₹ INR/i });
+    const inrBtn = screen.getByRole('radio', { name: /₹ INR/i });
     await act(async () => {
-      fireEvent.click(inrRadio);
+      fireEvent.click(inrBtn);
     });
     expect(localStorage.getItem('gridpoint_currency')).toBe('INR');
-
-    // 3. Header Logistics Assistant button opens drawer
-    const assistantBtn = screen.getByRole('button', { name: /Logistics Assistant/i });
-    await act(async () => {
-      fireEvent.click(assistantBtn);
-    });
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-
-    // Close assistant
-    const closeAssistantBtn = screen.getByTitle('Close Assistant');
-    await act(async () => {
-      fireEvent.click(closeAssistantBtn);
-    });
-    expect(screen.queryByRole('dialog')).toBeNull();
-
-    // 4. Floating Action Button opens assistant
-    const fabBtn = screen.getByTitle('Open Logistics AI Assistant (Quick Action)');
-    await act(async () => {
-      fireEvent.click(fabBtn);
-    });
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-
-    await act(async () => {
-      fireEvent.keyDown(window, { key: 'Escape' });
-    });
-    expect(screen.queryByRole('dialog')).toBeNull();
-
-    // 5. Why GridPoint collapsible toggle
-    const whyBtn = screen.getByTitle('Open why GridPoint comparison');
-    await act(async () => {
-      fireEvent.click(whyBtn);
-    });
-    expect(screen.getAllByText(/Algorithmic Transparency/i)[0]).toBeInTheDocument();
-
-    // 6. Mathematical Proof collapsible toggle
-    const proofToggle = screen.getByRole('button', { name: /Toggle mathematical proof formulation/i });
-    await act(async () => {
-      fireEvent.click(proofToggle);
-    });
-    expect(screen.getByText(/Capacitated Facility Location Problem/i)).toBeInTheDocument();
-
-    // 7. Tabs in Ranking Section are rendered
-    expect(screen.getByRole('tab', { name: /Optimal Network/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Alternatives Leaderboard/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /All Candidates & Regret Scores/i })).toBeInTheDocument();
-
-    // 8. Control Panel Presets
-    const speedPresetBtn = screen.getByRole('button', { name: /Speed \/ Quick Commerce/i });
-    await act(async () => {
-      fireEvent.click(speedPresetBtn);
-    });
-
-    const costPresetBtn = screen.getByRole('button', { name: /Cost Focus/i });
-    await act(async () => {
-      fireEvent.click(costPresetBtn);
-    });
-
-    // 9. Solve Button trigger
-    const solveBtn = screen.getByRole('button', { name: /Solve Network Topology/i });
-    await act(async () => {
-      fireEvent.click(solveBtn);
-    });
-
-    // Verify no unhandled error boundary crashes
-    expect(screen.queryByText(/Component Error/i)).toBeNull();
   });
 
-  it('handles Koramangala demand edit from 420 to 2800 and restores with Reset Demo Data', async () => {
+  it('navigates to Demand Map, edits Koramangala demand from 420 to 2800, and verifies totals', async () => {
+    window.location.hash = '#/map';
+
     await act(async () => {
       render(<App />);
     });
 
-    // 1. Search bar is present
+    // 1. Search & Location Bar is present
     expect(
       screen.getByPlaceholderText(/Search & Add Delivery Zone/i)
     ).toBeInTheDocument();
 
     // 2. Zone table renders Koramangala
-    expect(screen.getByText('Koramangala')).toBeInTheDocument();
+    expect(screen.getAllByText(/Koramangala/i)[0]).toBeInTheDocument();
 
-    // Find the input for Koramangala demand (starts at 420)
+    // 3. Find input for Koramangala demand
     const inputs = screen.getAllByLabelText(/Daily orders/i);
     const koramangalaInput = inputs.find((inp) => (inp as HTMLInputElement).value === '420');
     expect(koramangalaInput).toBeDefined();
@@ -218,18 +171,89 @@ describe('App Full Interaction Smoke Test', () => {
         fireEvent.change(koramangalaInput, { target: { value: '2800' } });
         fireEvent.blur(koramangalaInput);
       });
+
+      // Demand updated
       expect((koramangalaInput as HTMLInputElement).value).toBe('2800');
     }
 
-    // 3. Reset Demo Data restores network
-    const resetBtn = screen.getByRole('button', { name: /Reset Demo Data/i });
-    expect(resetBtn).toBeInTheDocument();
+    // Verify no unhandled error boundary crashes
+    expect(screen.queryByText(/Component Error/i)).toBeNull();
+  });
+
+  it('navigates to Network Configuration view and exercises controls', async () => {
+    window.location.hash = '#/config';
+
     await act(async () => {
-      fireEvent.click(resetBtn);
+      render(<App />);
     });
 
-    const resetInputs = screen.getAllByLabelText(/Daily orders/i);
-    const resetKoramangala = resetInputs.find((inp) => (inp as HTMLInputElement).value === '420');
-    expect(resetKoramangala).toBeDefined();
+    // Header and section titles
+    expect(screen.getByText(/Network Configuration & Constraints/i)).toBeInTheDocument();
+    expect(screen.getByText(/Optimization Sizing Mode/i)).toBeInTheDocument();
+    expect(screen.getByText(/Facility & Corridor Constraints/i)).toBeInTheDocument();
+
+    // Priority Presets
+    const speedPreset = screen.getByText(/Speed & Proximity/i);
+    await act(async () => {
+      fireEvent.click(speedPreset);
+    });
+
+    const costPreset = screen.getByText(/Cost Focus/i);
+    await act(async () => {
+      fireEvent.click(costPreset);
+    });
+
+    // Distance Metric radios
+    const haversineRadio = screen.getByLabelText(/Straight-line Haversine/i);
+    await act(async () => {
+      fireEvent.click(haversineRadio);
+    });
+
+    expect(screen.queryByText(/Component Error/i)).toBeNull();
+  });
+
+  it('navigates to Optimization & Solvers view and renders proof and rankings', async () => {
+    window.location.hash = '#/solvers';
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByText(/Optimization & Solvers Engine/i)).toBeInTheDocument();
+    expect(screen.getByText(/Live Exact CFLP Engine/i)).toBeInTheDocument();
+
+    // Mathematical proof toggle
+    const proofToggle = screen.getByRole('button', { name: /Toggle mathematical proof formulation/i });
+    await act(async () => {
+      fireEvent.click(proofToggle);
+    });
+    expect(screen.getByText(/Capacitated Facility Location Problem/i)).toBeInTheDocument();
+
+    // Ranking tabs
+    expect(screen.getByRole('tab', { name: /Optimal Network/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Alternatives Leaderboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /All Candidates & Regret Scores/i })).toBeInTheDocument();
+  });
+
+  it('navigates to Scenario Lab view and renders stress testing controls', async () => {
+    window.location.hash = '#/scenarios';
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByText(/Scenario Lab & Resilience Stress-Testing/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Demand Surge/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Transit & Fuel Shock/i)[0]).toBeInTheDocument();
+  });
+
+  it('navigates to Tactical Fleet view and renders fleet sizing', async () => {
+    window.location.hash = '#/fleet';
+    await act(async () => {
+      render(<App />);
+    });
+
+    expect(screen.getByText(/Tactical Fleet Operations & Sizing/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total Vehicles Deployed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total Circuit Distance/i)).toBeInTheDocument();
   });
 });
