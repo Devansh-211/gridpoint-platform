@@ -25,6 +25,11 @@ class WarehouseCandidate:
     is_open: bool = False
     assigned_neighborhood_ids: List[str] = field(default_factory=list)
     total_assigned_demand: float = 0.0
+    plot_id: Optional[str] = None
+    locality: Optional[str] = None
+    area_sq_ft: Optional[float] = None
+    lease_inr_per_sq_ft_month: Optional[float] = None
+    zoning_type: Optional[str] = None
 
 
 @dataclass

@@ -104,3 +104,57 @@ export interface TradeoffPoint {
   is_feasible: boolean;
   warehouses_open: string[];
 }
+
+export interface AlternativeConfig {
+  rank: number;
+  open_warehouses: string[];
+  warehouse_names: string[];
+  combined_total_cost: number;
+  delivery_transit_cost: number;
+  infrastructure_lease_cost: number;
+  delta_vs_optimal_inr: number;
+  delta_pct: number;
+  per_site_utilization: Record<string, number>;
+  sites_changed: number;
+  sites_added: string[];
+  sites_removed: string[];
+  solver_status: string;
+  mip_gap?: number | null;
+}
+
+export interface SiteScoreItem {
+  plot_id: string;
+  locality: string;
+  lat: number;
+  lng: number;
+  area_sq_ft: number;
+  zoning_type: string;
+  capacity_orders_per_day: number;
+  daily_lease_inr: number;
+  gravity_score: number;
+  avg_distance_top_20pct_km: number;
+  effective_daily_lease_inr: number;
+  regret_inr: number;
+  regret_estimated: boolean;
+  status: 'SELECTED' | 'RUNNER_UP' | 'REJECTED';
+  reason: string;
+}
+
+export interface VerificationSummary {
+  checked: number;
+  matched: boolean;
+  brute_force_ms: number;
+  milp_optimum_cost: number;
+  brute_force_optimum_cost: number;
+}
+
+export interface RankResponse {
+  session_id: string;
+  p: number;
+  optimal: OptimizeResponse;
+  alternatives: AlternativeConfig[];
+  site_scores: SiteScoreItem[];
+  verification?: VerificationSummary | null;
+  solve_ms: number;
+}
+

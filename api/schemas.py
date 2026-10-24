@@ -287,3 +287,62 @@ class AgentExplainResponse(BaseModel):
     suggested_followups: List[str] = []
 
 
+# 10. Candidate Evaluation & Ranking models
+class AlternativeConfig(BaseModel):
+    rank: int
+    open_warehouses: List[str]
+    warehouse_names: List[str]
+    combined_total_cost: float
+    delivery_transit_cost: float
+    infrastructure_lease_cost: float
+    delta_vs_optimal_inr: float
+    delta_pct: float
+    per_site_utilization: Dict[str, float]
+    sites_changed: int
+    sites_added: List[str]
+    sites_removed: List[str]
+    solver_status: str
+    mip_gap: Optional[float] = None
+
+
+class SiteScoreItem(BaseModel):
+    plot_id: str
+    locality: str
+    lat: float
+    lng: float
+    area_sq_ft: float
+    zoning_type: str
+    capacity_orders_per_day: float
+    daily_lease_inr: float
+    gravity_score: float
+    avg_distance_top_20pct_km: float
+    effective_daily_lease_inr: float
+    regret_inr: float
+    regret_estimated: bool = False
+    status: str = Field(description="'SELECTED', 'RUNNER_UP', or 'REJECTED'")
+    reason: str
+
+
+class VerificationSummary(BaseModel):
+    checked: int
+    matched: bool
+    brute_force_ms: float
+    milp_optimum_cost: float
+    brute_force_optimum_cost: float
+
+
+class RankRequest(OptimizeRequest):
+    verify: bool = Field(default=False, description="Enumerate combinations and run transportation LP verification when C(M, p) <= 5000")
+
+
+class RankResponse(BaseModel):
+    session_id: str
+    p: int
+    optimal: OptimizeResponse
+    alternatives: List[AlternativeConfig]
+    site_scores: List[SiteScoreItem]
+    verification: Optional[VerificationSummary] = None
+    solve_ms: float
+
+
+

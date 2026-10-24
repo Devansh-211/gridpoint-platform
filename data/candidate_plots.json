@@ -1,0 +1,182 @@
+[
+  {
+    "plotId": "BLR-PL-01",
+    "locality": "Peenya Industrial Area",
+    "lat": 13.0292,
+    "lng": 77.5204,
+    "areaSqFt": 45000,
+    "leaseInrPerSqFtMonth": 10.0,
+    "zoningType": "Industrial (Hi-Tech / Manufacturing)"
+  },
+  {
+    "plotId": "BLR-PL-02",
+    "locality": "Yeshwanthpur Industrial Suburb",
+    "lat": 13.0238,
+    "lng": 77.5401,
+    "areaSqFt": 40000,
+    "leaseInrPerSqFtMonth": 12.0,
+    "zoningType": "Commercial / Logistics"
+  },
+  {
+    "plotId": "BLR-PL-03",
+    "locality": "Whitefield Export Promotion Industrial Park",
+    "lat": 12.9698,
+    "lng": 77.7500,
+    "areaSqFt": 55000,
+    "leaseInrPerSqFtMonth": 9.5,
+    "zoningType": "Industrial / Tech Logistics"
+  },
+  {
+    "plotId": "BLR-PL-04",
+    "locality": "Electronic City Logistics Hub",
+    "lat": 12.8452,
+    "lng": 77.6602,
+    "areaSqFt": 48000,
+    "leaseInrPerSqFtMonth": 9.0,
+    "zoningType": "Light Industrial"
+  },
+  {
+    "plotId": "BLR-PL-05",
+    "locality": "Bommasandra Industrial Area",
+    "lat": 12.8152,
+    "lng": 77.6874,
+    "areaSqFt": 60000,
+    "leaseInrPerSqFtMonth": 7.5,
+    "zoningType": "Industrial (Heavy / Logistics)"
+  },
+  {
+    "plotId": "BLR-PL-06",
+    "locality": "Hoskote Industrial Corridor",
+    "lat": 13.0712,
+    "lng": 77.7981,
+    "areaSqFt": 65000,
+    "leaseInrPerSqFtMonth": 6.8,
+    "zoningType": "Warehousing & Freight"
+  },
+  {
+    "plotId": "BLR-PL-07",
+    "locality": "Devanahalli Logistics Park",
+    "lat": 13.2481,
+    "lng": 77.7132,
+    "areaSqFt": 70000,
+    "leaseInrPerSqFtMonth": 6.0,
+    "zoningType": "Airport Cargo & Logistics"
+  },
+  {
+    "plotId": "BLR-PL-08",
+    "locality": "Dobbaspet Industrial Area",
+    "lat": 13.2014,
+    "lng": 77.3512,
+    "areaSqFt": 75000,
+    "leaseInrPerSqFtMonth": 5.5,
+    "zoningType": "Industrial / Bulk Storage"
+  },
+  {
+    "plotId": "BLR-PL-09",
+    "locality": "Bidadi Industrial Area",
+    "lat": 12.7985,
+    "lng": 77.3881,
+    "areaSqFt": 58000,
+    "leaseInrPerSqFtMonth": 7.0,
+    "zoningType": "Automotive & Manufacturing"
+  },
+  {
+    "plotId": "BLR-PL-10",
+    "locality": "Jigani Industrial Area",
+    "lat": 12.7804,
+    "lng": 77.6372,
+    "areaSqFt": 52000,
+    "leaseInrPerSqFtMonth": 8.0,
+    "zoningType": "Industrial / Engineering"
+  },
+  {
+    "plotId": "BLR-PL-11",
+    "locality": "Attibele Industrial Cluster",
+    "lat": 12.7792,
+    "lng": 77.7694,
+    "areaSqFt": 62000,
+    "leaseInrPerSqFtMonth": 7.2,
+    "zoningType": "Interstate Freight & Logistics"
+  },
+  {
+    "plotId": "BLR-PL-12",
+    "locality": "Nelamangala Highway Logistics Hub",
+    "lat": 13.0991,
+    "lng": 77.3942,
+    "areaSqFt": 68000,
+    "leaseInrPerSqFtMonth": 6.5,
+    "zoningType": "Highway Transit Warehousing"
+  },
+  {
+    "plotId": "BLR-PL-13",
+    "locality": "Mahadevapura Commercial Zone",
+    "lat": 12.9901,
+    "lng": 77.6953,
+    "areaSqFt": 38000,
+    "leaseInrPerSqFtMonth": 12.5,
+    "zoningType": "Urban Distribution Hub"
+  },
+  {
+    "plotId": "BLR-PL-14",
+    "locality": "KR Puram Railway Siding Yard",
+    "lat": 13.0075,
+    "lng": 77.6959,
+    "areaSqFt": 46000,
+    "leaseInrPerSqFtMonth": 9.8,
+    "zoningType": "Multimodal Rail-Road Depot"
+  },
+  {
+    "plotId": "BLR-PL-15",
+    "locality": "Hebbal North Distribution Depot",
+    "lat": 13.0358,
+    "lng": 77.5970,
+    "areaSqFt": 42000,
+    "leaseInrPerSqFtMonth": 11.0,
+    "zoningType": "Urban Gateway Distribution"
+  },
+  {
+    "plotId": "BLR-PL-16",
+    "locality": "Bellandur Outer Ring Hub",
+    "lat": 12.9304,
+    "lng": 77.6784,
+    "areaSqFt": 36000,
+    "leaseInrPerSqFtMonth": 13.5,
+    "zoningType": "Commercial Micro-Fulfillment"
+  },
+  {
+    "plotId": "BLR-PL-17",
+    "locality": "Sarjapur Road Distribution Center",
+    "lat": 12.9116,
+    "lng": 77.6744,
+    "areaSqFt": 44000,
+    "leaseInrPerSqFtMonth": 10.2,
+    "zoningType": "Last-Mile Distribution"
+  },
+  {
+    "plotId": "BLR-PL-18",
+    "locality": "Bannerghatta Logistics Corridor",
+    "lat": 12.8876,
+    "lng": 77.5971,
+    "areaSqFt": 48000,
+    "leaseInrPerSqFtMonth": 9.2,
+    "zoningType": "South Arterial Logistics"
+  },
+  {
+    "plotId": "BLR-PL-19",
+    "locality": "Kanakapura Road Transit Depot",
+    "lat": 12.8702,
+    "lng": 77.5510,
+    "areaSqFt": 50000,
+    "leaseInrPerSqFtMonth": 8.5,
+    "zoningType": "Light Commercial & Storage"
+  },
+  {
+    "plotId": "BLR-PL-20",
+    "locality": "Yelahanka New Town Depot",
+    "lat": 13.1007,
+    "lng": 77.5963,
+    "areaSqFt": 52000,
+    "leaseInrPerSqFtMonth": 8.4,
+    "zoningType": "Northern Suburb Fulfillment"
+  }
+]

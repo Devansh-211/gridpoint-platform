@@ -19,6 +19,7 @@ from routing.distance import get_matrix, DistanceMatrix
 from optimization.cflp import solve_cflp, get_milp_solver
 from optimization.assignment import process_assignments
 from optimization.cvrp import solve_cvrp_for_warehouse
+from optimization.ranking import compute_ranking
 from simulation.scenario import run_scenario_simulation
 from api.schemas import (
     NeighborhoodItem,
@@ -42,6 +43,11 @@ from api.schemas import (
     SyntheticDataRequest,
     AgentExplainRequest,
     AgentExplainResponse,
+    RankRequest,
+    RankResponse,
+    AlternativeConfig,
+    SiteScoreItem,
+    VerificationSummary,
 )
 from api.agent import process_agent_dialog, generate_synthetic_demand_dataset, process_agent_explanation
 
@@ -587,6 +593,104 @@ def optimize_network(req: OptimizeRequest):
     session["last_req"] = req
     SOLVE_CACHE[cache_key] = response
 
+    return response
+
+
+# 3b. Candidate Evaluation & Ranking Engine
+RANK_CACHE: Dict[str, RankResponse] = {}
+
+@router.post("/rank", response_model=RankResponse)
+def rank_network(req: RankRequest):
+    """Calculates ranks #1 through #5 via iterative no-good cuts, regret via forced inclusion,
+    and optional verification.
+    """
+    t_start = time.perf_counter()
+    session = _get_or_load_default_session(req.session_id or "default")
+    neighborhoods: List[Neighborhood] = session["neighborhoods"]
+    total_demand = sum(n.daily_orders for n in neighborhoods)
+
+    # Cache key for rank request
+    rank_cache_key = hashlib.md5(
+        f"{req.session_id}_{req.p}_{req.warehouse_capacity}_{req.fixed_cost_per_warehouse}_{req.cost_per_km}_{req.radius_max_km}_{req.verify}_{len(neighborhoods)}_{total_demand}".encode()
+    ).hexdigest()
+
+    if rank_cache_key in RANK_CACHE:
+        logger.info("Serving ranking solution from server-side cache (key: %s)", rank_cache_key)
+        return RANK_CACHE[rank_cache_key]
+
+    # 1. Run base optimize to get optimal baseline
+    base_optimize = optimize_network(req)
+
+    # 2. Candidate pool: if demo neighborhoods, load candidate_plots.json if available
+    cand_plots_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "candidate_plots.json")
+    candidates: List[WarehouseCandidate] = []
+    
+    if os.path.exists(cand_plots_path) and (req.session_id == "default" or len(neighborhoods) == 36):
+        import json
+        with open(cand_plots_path, "r", encoding="utf-8") as f:
+            plots_data = json.load(f)
+        for p_item in plots_data:
+            cap_val = round(float(p_item["areaSqFt"]) * 0.08)
+            daily_l = round((float(p_item["areaSqFt"]) * float(p_item["leaseInrPerSqFtMonth"])) / 30.0, 2)
+            candidates.append(
+                WarehouseCandidate(
+                    id=p_item["plotId"],
+                    name=p_item["locality"],
+                    latitude=float(p_item["lat"]),
+                    longitude=float(p_item["lng"]),
+                    capacity=cap_val if req.warehouse_capacity is None else float(req.warehouse_capacity),
+                    plot_id=p_item["plotId"],
+                    locality=p_item["locality"],
+                    area_sq_ft=float(p_item["areaSqFt"]),
+                    lease_inr_per_sq_ft_month=float(p_item["leaseInrPerSqFtMonth"]),
+                    zoning_type=p_item["zoningType"],
+                )
+            )
+            # Store daily lease attribute for ranking module
+            setattr(candidates[-1], "daily_lease_inr", daily_l)
+    else:
+        candidates = [
+            WarehouseCandidate(
+                id=n.id,
+                name=n.name,
+                latitude=n.latitude,
+                longitude=n.longitude,
+                capacity=n.capacity if n.capacity else req.warehouse_capacity,
+                plot_id=n.id,
+                locality=n.name,
+            )
+            for n in neighborhoods
+        ]
+
+    # Distance matrix
+    matrix = get_matrix(neighborhoods, mode=req.routing_mode)
+
+    # 3. Compute ranking, alternatives, site scores and verification
+    alternatives, site_scores, verification = compute_ranking(
+        neighborhoods=neighborhoods,
+        candidates=candidates,
+        p=req.p,
+        matrix=matrix,
+        cost_per_km=req.cost_per_km,
+        user_lease_inr=req.fixed_cost_per_warehouse,
+        effective_radius=req.radius_max_km,
+        verify=req.verify,
+        optimal_response=base_optimize,
+    )
+
+    t_elapsed_ms = round((time.perf_counter() - t_start) * 1000.0, 1)
+
+    response = RankResponse(
+        session_id=req.session_id or "default",
+        p=req.p,
+        optimal=base_optimize,
+        alternatives=alternatives,
+        site_scores=site_scores,
+        verification=verification,
+        solve_ms=t_elapsed_ms,
+    )
+
+    RANK_CACHE[rank_cache_key] = response
     return response
 
 
