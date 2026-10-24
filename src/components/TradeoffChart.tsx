@@ -43,8 +43,8 @@ export const TradeoffChart: React.FC<TradeoffChartProps> = ({ currency, points }
         </div>
       </div>
 
-      <div className="mt-4 h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-4 h-72 w-full min-h-[280px]">
+        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={250}>
           <LineChart data={formattedData} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E4E8EC" />
             <XAxis dataKey="p" stroke="#8A94A0" fontSize={11} tickLine={false} />

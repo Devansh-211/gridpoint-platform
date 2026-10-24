@@ -19,6 +19,8 @@ import { NetworkMap } from './components/NetworkMap';
 import { RankingSection } from './components/RankingSection';
 import { RegistryDrawer } from './components/RegistryDrawer';
 import { CsvIngestion } from './components/CsvIngestion';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { LogisticsAssistant } from './components/LogisticsAssistant';
 import {
   DEFAULT_DELIVERY_COST_PER_KM_INR,
   DEFAULT_FIXED_WAREHOUSE_LEASE_INR,
@@ -31,7 +33,7 @@ import bundledDemoZones from './data/demoZones.json';
 import bundledDemoTradeoff from './data/demoTradeoff.json';
 import bundledDemoRank from './data/demoRank.json';
 
-import { RefreshCw, Info } from 'lucide-react';
+import { RefreshCw, Info, Bot } from 'lucide-react';
 
 export const App: React.FC = () => {
   // 1. Currency State (persisted in localStorage, defaulting to 'INR')
@@ -72,6 +74,7 @@ export const App: React.FC = () => {
   // Site Inspection State & URL Deep-Linking
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [isRegistryOpen, setIsRegistryOpen] = useState<boolean>(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
 
   // Status & Resilience State
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -92,8 +95,13 @@ export const App: React.FC = () => {
   const smoothScrollTo = (elementId: string) => {
     const el = document.getElementById(elementId);
     if (!el) return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+    if (typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+    }
   };
 
   // URL Deep-Linking check on initial mount (?site=BLR-PL-01)
@@ -302,9 +310,71 @@ export const App: React.FC = () => {
     smoothScrollTo('whyGridPointSection');
   };
 
+  const handlePriorityPresetChange = (newPreset: 'cost' | 'speed' | 'sustainability') => {
+    setPriorityPreset(newPreset);
+    if (newPreset === 'speed') {
+      setRadiusMaxKm(20);
+    } else if (newPreset === 'cost') {
+      setRadiusMaxKm(25);
+    }
+  };
+
+  const handleApplyAgentParams = (params: {
+    p?: number;
+    warehouseCapacity?: number;
+    radiusMaxKm?: number | null;
+    deliveryCostInr?: number;
+    fixedLeaseInr?: number;
+    priorityPreset?: 'cost' | 'speed' | 'sustainability';
+  }) => {
+    let nextP = p;
+    if (params.p !== undefined && params.p !== null) {
+      nextP = params.p;
+      setP(params.p);
+    }
+    if (params.warehouseCapacity !== undefined && params.warehouseCapacity !== null) {
+      setWarehouseCapacity(params.warehouseCapacity);
+    }
+    if (params.radiusMaxKm !== undefined) {
+      setRadiusMaxKm(params.radiusMaxKm);
+    }
+    if (params.deliveryCostInr !== undefined && params.deliveryCostInr !== null) {
+      setDeliveryCostInr(params.deliveryCostInr);
+    }
+    if (params.fixedLeaseInr !== undefined && params.fixedLeaseInr !== null) {
+      setFixedLeaseInr(params.fixedLeaseInr);
+    }
+    if (params.priorityPreset !== undefined && params.priorityPreset !== null) {
+      setPriorityPreset(params.priorityPreset);
+    }
+
+    executeSolve({
+      p: nextP,
+      isCustom: !isDemoMode,
+    });
+  };
+
+  const pageContext = {
+    screen: 'Network Topology & Strategic Optimization',
+    currency,
+    p,
+    auto_size: autoSize,
+    total_demand: optimizeData?.total_system_demand ?? 25000,
+    total_capacity: optimizeData?.total_system_capacity ?? 12000,
+    capacity_headroom: optimizeData?.capacity_headroom ?? 0,
+    capacity_headroom_pct: optimizeData?.capacity_headroom_pct ?? 0,
+    combined_total_cost_inr: optimizeData?.combined_total_cost ?? 0,
+    transit_cost_inr: optimizeData?.total_delivery_cost ?? 0,
+    lease_cost_inr: optimizeData?.total_infrastructure_cost ?? 0,
+    active_warehouses: optimizeData?.warehouses.map((w) => w.name) ?? [],
+    total_zones: zones.length,
+    solve_ms: optimizeData?.solve_ms ?? null,
+    solver_status: optimizeData?.status ?? 'Optimal',
+  };
+
   // Active inspected site object
   const activeInspectedSite =
-    rankingData?.site_scores.find((c) => c.plot_id === selectedSiteId) || null;
+    rankingData?.site_scores?.find((c) => c.plot_id === selectedSiteId) || null;
 
   return (
     <div className="min-h-screen bg-gp-bg text-gp-text-primary flex flex-col font-sans antialiased">
@@ -317,6 +387,7 @@ export const App: React.FC = () => {
         isCached={isCachedFallback}
         mipGap={optimizeData?.mip_gap}
         onToggleWhy={handleToggleWhy}
+        onToggleAssistant={() => setIsAssistantOpen((prev) => !prev)}
       />
 
       <main className="flex-1">
@@ -351,148 +422,193 @@ export const App: React.FC = () => {
           onUploadClick={handleUploadClick}
           whyOpen={whyOpen}
           onWhyOpenChange={setWhyOpen}
+          onAssistantClick={() => setIsAssistantOpen(true)}
         />
 
         {/* Main Workspace Container */}
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
           {/* Executive KPI Cards */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-gp-text-tertiary">
-                Executive Optimization KPIs (Single-Source-of-Truth)
-              </h2>
-              <span className="text-xs text-gp-text-tertiary">
-                Units displayed in: <strong className="text-gp-primary-700">{currency}</strong> (Canonical Storage: INR)
-              </span>
+          <ErrorBoundary title="Executive KPI Cards">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gp-text-tertiary">
+                  Executive Optimization KPIs (Single-Source-of-Truth)
+                </h2>
+                <span className="text-xs text-gp-text-tertiary">
+                  Units displayed in: <strong className="text-gp-primary-700">{currency}</strong> (Canonical Storage: INR)
+                </span>
+              </div>
+              <KpiCards
+                currency={currency}
+                optimizeData={optimizeData}
+                compareData={compareData}
+                isLoading={isLoading}
+              />
             </div>
-            <KpiCards
-              currency={currency}
-              optimizeData={optimizeData}
-              compareData={compareData}
-              isLoading={isLoading}
-            />
-          </div>
+          </ErrorBoundary>
 
           {/* Capacity Headroom Bar in Throughput Banner */}
           {optimizeData && (
-            <HeadroomBar
-              totalCapacity={optimizeData.total_system_capacity}
-              totalDemand={optimizeData.total_system_demand}
-              headroomOrders={optimizeData.capacity_headroom}
-              headroomPct={optimizeData.capacity_headroom_pct}
-            />
+            <ErrorBoundary title="Capacity Headroom Banner">
+              <HeadroomBar
+                totalCapacity={optimizeData.total_system_capacity}
+                totalDemand={optimizeData.total_system_demand}
+                headroomOrders={optimizeData.capacity_headroom}
+                headroomPct={optimizeData.capacity_headroom_pct}
+              />
+            </ErrorBoundary>
           )}
 
           {/* Interactive Network Map & Results Heading */}
-          <section id="resultsSection" className="scroll-mt-20 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <h2
-                  ref={resultsHeadingRef}
-                  tabIndex={-1}
-                  className="text-lg font-bold text-gp-text-primary focus:outline-none"
-                >
-                  Network Topology & Candidate Footprints
-                </h2>
-                <p className="text-xs text-gp-text-secondary">
-                  Active delivery network with {optimizeData?.warehouses.length || 3} strategic distribution depots
-                  serving {zones.length || 36} demand zones • Click any candidate site to inspect Land Registry Template
-                </p>
-              </div>
-            </div>
-
-            <NetworkMap
-              optimizeData={optimizeData}
-              candidates={rankingData?.site_scores || []}
-              selectedPlotId={selectedSiteId}
-              onSelectSite={handleSelectSite}
-            />
-          </section>
-
-          {/* Mathematical Proof Bar (KaTeX) */}
-          <MathematicalProof
-            proofOpen={proofOpen}
-            onProofOpenChange={setProofOpen}
-            isAutoSize={autoSize}
-          />
-
-          {/* Ranking & Alternative Configurations Section */}
-          {isDemoMode && rankingData && (
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
+          <ErrorBoundary title="Network Map & Topology">
+            <section id="resultsSection" className="scroll-mt-20 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                  <h2 className="text-lg font-bold text-gp-text-primary">
-                    Warehouse Site Ranking & Alternative Configurations
+                  <h2
+                    ref={resultsHeadingRef}
+                    tabIndex={-1}
+                    className="text-lg font-bold text-gp-text-primary focus:outline-none"
+                  >
+                    Network Topology & Candidate Footprints
                   </h2>
                   <p className="text-xs text-gp-text-secondary">
-                    Iterative no-good cuts rank alternatives #2–#5 with regret quantification and LP verification
+                    Active delivery network with {optimizeData?.warehouses.length || 3} strategic distribution depots
+                    serving {zones.length || 36} demand zones • Click any candidate site to inspect Land Registry Template
                   </p>
                 </div>
               </div>
 
-              <RankingSection
+              <NetworkMap
                 optimizeData={optimizeData}
-                alternatives={rankingData.alternatives}
-                candidates={rankingData.site_scores}
-                currency={currency}
-                isLoading={isSolving}
-                onSelectSite={handleSelectSite}
+                candidates={rankingData?.site_scores || []}
                 selectedPlotId={selectedSiteId}
+                onSelectSite={handleSelectSite}
+                currency={currency}
               />
             </section>
+          </ErrorBoundary>
+
+          {/* Mathematical Proof Bar (KaTeX) */}
+          <ErrorBoundary title="Mathematical Formulation Proof">
+            <MathematicalProof
+              proofOpen={proofOpen}
+              onProofOpenChange={setProofOpen}
+              isAutoSize={autoSize}
+            />
+          </ErrorBoundary>
+
+          {/* Ranking & Alternative Configurations Section */}
+          {isDemoMode && rankingData && (
+            <ErrorBoundary title="Site Ranking & Alternative Configurations">
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-gp-text-primary">
+                      Warehouse Site Ranking & Alternative Configurations
+                    </h2>
+                    <p className="text-xs text-gp-text-secondary">
+                      Iterative no-good cuts rank alternatives #2–#5 with regret quantification and LP verification
+                    </p>
+                  </div>
+                </div>
+
+                <RankingSection
+                  optimizeData={optimizeData}
+                  alternatives={rankingData.alternatives}
+                  candidates={rankingData.site_scores}
+                  currency={currency}
+                  isLoading={isSolving}
+                  onSelectSite={handleSelectSite}
+                  selectedPlotId={selectedSiteId}
+                />
+              </section>
+            </ErrorBoundary>
           )}
 
           {/* Strategic Control Panel & Live Currency Inputs */}
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gp-text-tertiary mb-3">
-              Configuration & Financial Cost Parameters
-            </h2>
-            <ControlPanel
-              currency={currency}
-              p={p}
-              onPChange={setP}
-              warehouseCapacity={warehouseCapacity}
-              onCapacityChange={setWarehouseCapacity}
-              radiusMaxKm={radiusMaxKm}
-              onRadiusChange={setRadiusMaxKm}
-              deliveryCostInr={deliveryCostInr}
-              onDeliveryCostInrChange={setDeliveryCostInr}
-              fixedLeaseInr={fixedLeaseInr}
-              onFixedLeaseInrChange={setFixedLeaseInr}
-              priorityPreset={priorityPreset}
-              onPriorityPresetChange={setPriorityPreset}
-              autoSize={autoSize}
-              onAutoSizeChange={setAutoSize}
-              pMax={pMax}
-              onPMaxChange={setPMax}
-              onSolve={() => executeSolve()}
-              isSolving={isSolving}
-            />
-          </section>
+          <ErrorBoundary title="Strategic Control Panel">
+            <section>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gp-text-tertiary mb-3">
+                Configuration & Financial Cost Parameters
+              </h2>
+              <ControlPanel
+                currency={currency}
+                p={p}
+                onPChange={setP}
+                warehouseCapacity={warehouseCapacity}
+                onCapacityChange={setWarehouseCapacity}
+                radiusMaxKm={radiusMaxKm}
+                onRadiusChange={setRadiusMaxKm}
+                deliveryCostInr={deliveryCostInr}
+                onDeliveryCostInrChange={setDeliveryCostInr}
+                fixedLeaseInr={fixedLeaseInr}
+                onFixedLeaseInrChange={setFixedLeaseInr}
+                priorityPreset={priorityPreset}
+                onPriorityPresetChange={handlePriorityPresetChange}
+                autoSize={autoSize}
+                onAutoSizeChange={setAutoSize}
+                pMax={pMax}
+                onPMaxChange={setPMax}
+                onSolve={() => executeSolve()}
+                isSolving={isSolving}
+              />
+            </section>
+          </ErrorBoundary>
 
           {/* Baseline Benchmark Comparison Table & Facility Manifest */}
-          <BenchmarkComparison
-            currency={currency}
-            optimizeData={optimizeData}
-            compareData={compareData}
-          />
+          <ErrorBoundary title="Baseline Benchmark Comparison">
+            <BenchmarkComparison
+              currency={currency}
+              optimizeData={optimizeData}
+              compareData={compareData}
+            />
+          </ErrorBoundary>
 
           {/* Facility Count vs Cost Tradeoff Curve (Recharts) */}
-          <TradeoffChart currency={currency} points={tradeoffPoints} />
+          <ErrorBoundary title="Tradeoff Curve Analysis">
+            <TradeoffChart currency={currency} points={tradeoffPoints} />
+          </ErrorBoundary>
 
           {/* Custom CSV Ingestion */}
-          <CsvIngestion onZonesLoaded={handleCustomZones} uploadInputRef={uploadInputRef} />
+          <ErrorBoundary title="CSV Ingestion Dropzone">
+            <CsvIngestion onZonesLoaded={handleCustomZones} uploadInputRef={uploadInputRef} />
+          </ErrorBoundary>
         </div>
       </main>
 
       {/* Land Registry Inspector Drawer (Demo Only, Radix Dialog) */}
-      <RegistryDrawer
-        site={activeInspectedSite}
-        isOpen={isRegistryOpen}
-        onClose={handleCloseRegistry}
-        currency={currency}
-        isDemoMode={isDemoMode}
-      />
+      <ErrorBoundary title="Land Registry Drawer">
+        <RegistryDrawer
+          site={activeInspectedSite}
+          isOpen={isRegistryOpen}
+          onClose={handleCloseRegistry}
+          currency={currency}
+          isDemoMode={isDemoMode}
+        />
+      </ErrorBoundary>
+
+      {/* Logistics AI Assistant Drawer */}
+      <ErrorBoundary title="Logistics AI Assistant Drawer">
+        <LogisticsAssistant
+          isOpen={isAssistantOpen}
+          onClose={() => setIsAssistantOpen(false)}
+          onApplyParams={handleApplyAgentParams}
+          pageContext={pageContext}
+          currency={currency}
+        />
+      </ErrorBoundary>
+
+      {/* Floating Action Button (FAB) for Assistant */}
+      <button
+        type="button"
+        id="btnOpenAgentFab"
+        onClick={() => setIsAssistantOpen(true)}
+        className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl transition-all duration-200 hover:bg-blue-700 hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300"
+        title="Open Logistics AI Assistant (Quick Action)"
+        aria-label="Open Logistics AI Assistant"
+      >
+        <Bot className="h-6 w-6" />
+      </button>
 
       {/* Footer with AI Usage Disclosure & Honesty Notice */}
       <footer className="border-t border-gp-border bg-white px-4 py-8 sm:px-6 lg:px-8 text-xs text-gp-text-tertiary">
