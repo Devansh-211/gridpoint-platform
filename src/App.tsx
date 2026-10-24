@@ -46,21 +46,34 @@ export const App: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(() => getRouteFromHash());
 
   useEffect(() => {
+    let resizeTimer: NodeJS.Timeout | null = null;
     const handleHashChange = () => {
       const newRoute = getRouteFromHash();
       setCurrentRoute(newRoute);
+      if (resizeTimer) clearTimeout(resizeTimer);
       // Trigger a resize event so Leaflet maps and Recharts recalculate layout properly
-      setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
+      resizeTimer = setTimeout(() => {
+        if (typeof window !== 'undefined' && typeof Event !== 'undefined') {
+          window.dispatchEvent(new Event('resize'));
+        }
       }, 50);
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('hashchange', handleHashChange);
+    }
+    return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('hashchange', handleHashChange);
+      }
+    };
   }, []);
 
   const handleRouteChange = useCallback((newRoute: AppRoute) => {
-    window.location.hash = `#/${newRoute}`;
+    if (typeof window !== 'undefined') {
+      window.location.hash = `#/${newRoute}`;
+    }
     setCurrentRoute(newRoute);
   }, []);
 
