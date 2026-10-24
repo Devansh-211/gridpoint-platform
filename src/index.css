@@ -12,6 +12,15 @@
   }
 }
 
+/* Z-Index Hierarchy: Map Panes < Sticky Header < Sidebar Drawer < Popovers < Modals < Toasts */
+.leaflet-pane {
+  z-index: 10 !important;
+}
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20 !important;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
