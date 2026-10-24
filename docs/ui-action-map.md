@@ -99,3 +99,21 @@
   - Found: Page header actions overlapped with titles at viewport widths between 900px and 1100px.
   - Fix: Flex header row with `flex-wrap`, `min-w-0`, and responsive stacking below 1100px.
 
+---
+
+## 4. Comprehensive Verification Results across All 50 Controls
+
+| Category | Total Controls | Current Status | Verification Test Evidence |
+|---|---|---|---|
+| **App Shell & Global Nav** (#1–#9) | 9 | **OK - Verified** | `src/test/clickEverything.test.tsx` (Route switching, deep links, settings/status) |
+| **Top Header Controls** (#10–#16) | 7 | **OK - Verified** | `src/test/clickEverything.test.tsx` (Currency pill, telemetry popover, avatar menu, preset trigger) & `src/test/pipelineResilience.test.ts` (Watchdog reset) |
+| **Demand Map KPIs & Overlays** (#17–#23) | 7 | **OK - Verified** | `src/test/DemandMapView.test.tsx`, `src/test/clickEverything.test.tsx` (Esc key, layer toggles) |
+| **Zone Inspector & Edit Controls** (#24–#28) | 5 | **OK - Verified** | `src/test/ReassignHubModal.test.tsx`, `src/test/pipelineResilience.test.ts` (Edit totals & loop prevention) |
+| **Zone Demand Table Controls** (#29–#31) | 3 | **OK - Verified** | `src/test/ZoneDemandTable.test.tsx` (Filtering, pagination, CSV export, inline orders) |
+| **Network Configuration Controls** (#32–#45) | 14 | **OK - Verified** | `src/test/NetworkConfigView.test.tsx`, `src/test/clickEverything.test.tsx` (Sizing mode, steppers, constraints, priority cards, distance radios) |
+| **Overview, Solvers, Scenarios, Fleet** (#46–#49) | 4 | **OK - Verified** | `src/test/clickEverything.test.tsx` (Route rendering, scenario controls, fleet calculations) |
+| **Global Keyboard & AST Controls** (#50 + Scanner) | 1 + 25 files | **OK - Verified** | `src/test/deadControlScanner.test.ts` (AST verification: 0 dead controls found), `src/test/useOptimizationPipeline.test.ts` |
+
+**All 50 controls from the reference blueprints and functional specifications are verified functional, responsive, and backed by live application logic.**
+
+
