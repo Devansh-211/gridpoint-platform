@@ -166,19 +166,29 @@
         </div>
 
         <div class="gp-header-actions">
-          <div class="gp-solver-status-chip" id="chipSolverStatus">
+          <div class="gp-solver-status-chip" id="chipSolverStatus" title="CBC Branch & Cut Solver Active (0.00% MIP gap)">
             <span class="gp-status-dot"></span>
-            <span id="textSolverStatus">Solver: CBC Active</span>
+            <span id="textSolverStatus">Solver: CBC Active • <span id="headerLatency">—</span></span>
           </div>
+
+          <!-- Currency Toggle: Segmented Pill immediately right of solver status badge -->
+          <div class="gp-currency-pill-group" role="radiogroup" aria-label="Currency display selector" id="headerCurrencyPillGroup">
+            <button type="button" role="radio" aria-checked="true" class="gp-currency-pill-btn active" id="btnCurrINR" data-curr="INR" title="Indian Rupee (Canonical storage)">
+              <span>₹</span> <span>INR</span>
+            </button>
+            <button type="button" role="radio" aria-checked="false" class="gp-currency-pill-btn" id="btnCurrUSD" data-curr="USD" title="US Dollar (FX: 85 INR/USD)">
+              <span>$</span> <span>USD</span>
+            </button>
+          </div>
+
+          <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnHeaderWhyGridPoint" style="border-color:var(--gp-primary-200); color:var(--gp-primary-700); background:var(--gp-primary-50);" title="Compare GridPoint against traditional tools">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <span>Why GridPoint?</span>
+          </button>
 
           <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnGlobalLoadDemo" title="Load Curated 36-Zone Bengaluru Dataset">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
             <span>Load Demo</span>
-          </button>
-
-          <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnHeaderExplain" title="Ask AI to Explain Current Screen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            <span>Ask AI to Explain</span>
           </button>
 
           <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnGlobalOptimize">
@@ -198,22 +208,118 @@
           <section class="gp-view active" id="viewLanding">
             
             <div class="gp-landing-hero">
-              <span class="gp-landing-badge">B2B Logistics Decision-Support Platform</span>
-              <h1 class="gp-landing-title">Intelligent Warehouse Location & Delivery Network Optimizer</h1>
-              <p class="gp-landing-subtitle">
-                Solve Capacitated Facility Location (CFLP) and Fleet Routing (CVRP) problems with mathematical rigor. Eliminate millions in transit costs and improve order delivery coverage.
+              <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <span class="gp-landing-badge">B2B Logistics Decision-Support Platform • Exact MILP Engine</span>
+                <span id="heroSolveChip" class="gp-badge gp-badge-optimal" style="display:none; font-size:11px; padding:3px 8px;">Last solve: <span id="heroSolveMs">—</span> ms</span>
+              </div>
+              <h1 class="gp-landing-title" style="max-width:850px; margin:0 auto 12px; font-size:32px; line-height:1.2;">
+                Mathematically Optimal Warehouse Networks. Simulated in Seconds, Not Weeks.
+              </h1>
+              <p class="gp-landing-subtitle" style="max-width:760px; margin:0 auto 24px; line-height:1.6;">
+                Solve Capacitated Facility Location exactly with Mixed-Integer Linear Programming, then plan delivery routes against an honest single-warehouse baseline. Stress-test the network against demand surges, fuel shocks and site outages in real time, with no black-box guesswork.
               </p>
 
               <div class="gp-landing-cta-row">
                 <button class="gp-btn gp-btn-primary gp-btn-lg" id="btnLandingLoadDemo">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                  <span>Load Bengaluru Demo (36 Zones)</span>
+                  <span id="txtBtnLandingDemo">⚡ Run Bengaluru Demo (36 Zones)</span>
                 </button>
                 <button class="gp-btn gp-btn-secondary gp-btn-lg" id="btnLandingGoData">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                  <span>Upload Custom CSV</span>
+                  <span>📂 Upload Custom Zones CSV</span>
                 </button>
               </div>
+
+              <!-- TASK 4: Why GridPoint Collapsible Comparison -->
+              <details class="gp-why-section" id="whyGridPointDetails">
+                <summary class="gp-why-summary">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:700; color:var(--gp-text-primary);">Why GridPoint? vs Traditional Methods</span>
+                    <span class="gp-badge gp-badge-estimate">4-Factor Audit</span>
+                  </div>
+                  <span style="font-size:12px; color:var(--gp-primary-600); font-weight:600;">Inspect Comparison &#9662;</span>
+                </summary>
+                <div class="gp-why-content">
+                  <div class="gp-why-table-wrapper">
+                    <table class="gp-why-table">
+                      <thead>
+                        <tr>
+                          <th scope="col" style="width:25%;">Capability</th>
+                          <th scope="col" style="width:25%;">Legacy Enterprise Tools</th>
+                          <th scope="col" style="width:25%;">Basic Mapping Tools</th>
+                          <th scope="col" class="gp-highlight-col" style="width:25%;">GridPoint Engine</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <th scope="row">Speed to Insight</th>
+                          <td>Long setup, slow runs</td>
+                          <td>Instant, but mathematically naive</td>
+                          <td class="gp-highlight-col">Exact MILP solve in seconds on the demo dataset</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Algorithmic Transparency</th>
+                          <td>Opaque proprietary weights</td>
+                          <td>Radius rings, no cost logic</td>
+                          <td class="gp-highlight-col">Honest baseline: single-warehouse centroid benchmark</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Financial Realism</th>
+                          <td>Custom CapEx/OpEx coding required</td>
+                          <td>Ignores lease vs. transit trade-off</td>
+                          <td class="gp-highlight-col">Automated cost minimiser balancing leases vs. transit (p vs. p_max)</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Supply Chain Resilience</th>
+                          <td>Static outputs that break under surge</td>
+                          <td>No stress testing</td>
+                          <td class="gp-highlight-col">Live what-if testing: demand surges, fuel cost, site outages</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Stacked cards on mobile (< 768px) -->
+                  <div class="gp-why-cards">
+                    <div class="gp-why-card">
+                      <strong style="color:var(--gp-text-primary);">Speed to Insight</strong>
+                      <div style="margin-top:4px; color:var(--gp-text-secondary);"><span style="font-weight:600;">Legacy:</span> Long setup, slow runs</div>
+                      <div style="color:var(--gp-text-secondary);"><span style="font-weight:600;">Basic Tools:</span> Instant, but mathematically naive</div>
+                      <div style="margin-top:4px; padding:6px; background:var(--gp-primary-50); border:1px solid var(--gp-primary-200); border-radius:4px; color:var(--gp-primary-700); font-weight:600;">
+                        <span>GridPoint: Exact MILP solve in seconds on the demo dataset</span>
+                      </div>
+                    </div>
+                    <div class="gp-why-card">
+                      <strong style="color:var(--gp-text-primary);">Algorithmic Transparency</strong>
+                      <div style="margin-top:4px; color:var(--gp-text-secondary);"><span style="font-weight:600;">Legacy:</span> Opaque proprietary weights</div>
+                      <div style="color:var(--gp-text-secondary);"><span style="font-weight:600;">Basic Tools:</span> Radius rings, no cost logic</div>
+                      <div style="margin-top:4px; padding:6px; background:var(--gp-primary-50); border:1px solid var(--gp-primary-200); border-radius:4px; color:var(--gp-primary-700); font-weight:600;">
+                        <span>GridPoint: Honest baseline: single-warehouse centroid benchmark</span>
+                      </div>
+                    </div>
+                    <div class="gp-why-card">
+                      <strong style="color:var(--gp-text-primary);">Financial Realism</strong>
+                      <div style="margin-top:4px; color:var(--gp-text-secondary);"><span style="font-weight:600;">Legacy:</span> Custom CapEx/OpEx coding required</div>
+                      <div style="color:var(--gp-text-secondary);"><span style="font-weight:600;">Basic Tools:</span> Ignores lease vs. transit trade-off</div>
+                      <div style="margin-top:4px; padding:6px; background:var(--gp-primary-50); border:1px solid var(--gp-primary-200); border-radius:4px; color:var(--gp-primary-700); font-weight:600;">
+                        <span>GridPoint: Automated cost minimiser balancing leases vs. transit (p vs. p_max)</span>
+                      </div>
+                    </div>
+                    <div class="gp-why-card">
+                      <strong style="color:var(--gp-text-primary);">Supply Chain Resilience</strong>
+                      <div style="margin-top:4px; color:var(--gp-text-secondary);"><span style="font-weight:600;">Legacy:</span> Static outputs that break under surge</div>
+                      <div style="color:var(--gp-text-secondary);"><span style="font-weight:600;">Basic Tools:</span> No stress testing</div>
+                      <div style="margin-top:4px; padding:6px; background:var(--gp-primary-50); border:1px solid var(--gp-primary-200); border-radius:4px; color:var(--gp-primary-700); font-weight:600;">
+                        <span>GridPoint: Live what-if testing: demand surges, fuel cost, site outages</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="font-size:11px; color:var(--gp-text-tertiary); margin-top:10px; font-style:italic;">
+                    * Comparison reflects typical categories, not specific vendors.
+                  </div>
+                </div>
+              </details>
             </div>
 
             <div class="gp-landing-features">
@@ -562,35 +668,46 @@
             
             <!-- Assumptions Strip -->
             <div class="gp-assumptions-strip" id="resultsAssumptionsStrip">
-              <div><strong>Delivery Cost / km:</strong> $1.25 (Estimated)</div>
-              <div><strong>Facility Lease:</strong> $300 / site / day</div>
-              <div><strong>Max Service Radius:</strong> No Limit</div>
+              <div><strong>Delivery Cost / km:</strong> <span id="stripDeliveryCost">₹35.00</span></div>
+              <div><strong>Facility Lease:</strong> <span id="stripFacilityLease">₹15,000 / site / day</span></div>
+              <div><strong>Max Service Radius:</strong> <span id="stripRadius">25 km</span></div>
               <div><strong>Distance Metric:</strong> Geographic Delivery Distance (Haversine)</div>
-              <div><strong>Solver Message:</strong> Optimal solution found</div>
+              <div><strong>Solver Message:</strong> <span id="stripSolverMsg">Optimal solution found</span></div>
             </div>
 
-            <!-- Throughput Co-Dependency & Headroom Banner -->
+            <!-- Throughput Co-Dependency & Headroom Banner with Progress Bar -->
             <div class="gp-throughput-banner" id="resultsThroughputBanner">
               <div class="gp-throughput-items">
                 <div class="gp-throughput-stat">
                   <span class="gp-throughput-stat-label">Total System Throughput</span>
-                  <span class="gp-throughput-stat-value" id="resTotalThroughput">12,000 orders/day</span>
+                  <span class="gp-throughput-stat-value tabular-nums" id="resTotalThroughput">12,000 orders/day</span>
                 </div>
                 <div style="color:var(--gp-border-strong); font-size:18px;">vs</div>
                 <div class="gp-throughput-stat">
                   <span class="gp-throughput-stat-label">Total Daily Demand</span>
-                  <span class="gp-throughput-stat-value" id="resTotalDemand">5,420 orders/day</span>
+                  <span class="gp-throughput-stat-value tabular-nums" id="resTotalDemand">5,420 orders/day</span>
                 </div>
                 <div class="gp-throughput-stat">
                   <span class="gp-throughput-stat-label">Net Capacity Headroom</span>
                   <div style="display:flex; align-items:center; gap:6px;">
-                    <span class="gp-throughput-stat-value" id="resCapacityHeadroom" style="color:var(--gp-success);">+6,580 orders/day</span>
-                    <span class="gp-delta-chip gp-delta-positive" id="resHeadroomPct">54.8% buffer</span>
+                    <span class="gp-throughput-stat-value tabular-nums" id="resCapacityHeadroom" style="color:var(--gp-success);">+6,580 orders/day</span>
+                    <span class="gp-delta-chip gp-delta-positive tabular-nums" id="resHeadroomPct">54.8% buffer</span>
                   </div>
                 </div>
               </div>
               <div id="resModeBadgeContainer">
                 <span class="gp-badge gp-badge-optimal" id="resModeBadge">Manual Mode (Exact p)</span>
+              </div>
+
+              <!-- TASK 5.3: Capacity Headroom Progress Bar -->
+              <div class="gp-headroom-progress-wrapper" style="width:100%; margin-top:12px;">
+                <div class="gp-headroom-progress-track">
+                  <div class="gp-headroom-progress-bar emerald" id="headroomProgressBar" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" aria-label="System capacity utilization" style="width:45%;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--gp-text-tertiary); margin-top:4px;">
+                  <span id="headroomProgressLabel">Net Capacity Headroom: 6,580 orders/day (54.8%)</span>
+                  <span id="headroomUtilLabel" class="tabular-nums">45.2% Allocated</span>
+                </div>
               </div>
             </div>
 
@@ -600,19 +717,74 @@
               <div id="textSizingRationale">The solver selected the cost-minimizing warehouse count by balancing transit and lease costs.</div>
             </div>
 
+            <!-- TASK 5.1: Mathematical Proof / Formula Bar -->
+            <details class="gp-why-section" id="resultsProofDetails" style="margin-top:12px; margin-bottom:16px;">
+              <summary class="gp-why-summary">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; color:var(--gp-text-primary);">Mathematical Proof / Formula</span>
+                  <span class="gp-badge gp-badge-optimal">PuLP + CBC MILP</span>
+                </div>
+                <span style="font-size:12px; color:var(--gp-primary-600); font-weight:600;">Inspect Formulation &#9662;</span>
+              </summary>
+              <div class="gp-why-content" style="font-size:12.5px; line-height:1.6;">
+                <div style="margin-bottom:12px;">
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--gp-text-primary);">1. Objective Function:</div>
+                  <div style="background:var(--gp-surface-sunken); padding:10px 14px; border-radius:6px; font-family:var(--gp-font-family-mono); overflow-x:auto;">
+                    min &sum;<sub>i&in;I</sub> &sum;<sub>j&in;J</sub> d<sub>ij</sub> &middot; c<sub>km</sub> &middot; D<sub>i</sub> &middot; x<sub>ij</sub> + &sum;<sub>j&in;J</sub> F<sub>j</sub> &middot; y<sub>j</sub>
+                  </div>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--gp-text-primary);">2. Constraints:</div>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">
+                    <div style="background:var(--gp-surface-sunken); padding:8px 12px; border-radius:6px;">
+                      <strong>Single Assignment:</strong><br>
+                      <code>&sum;<sub>j</sub> x<sub>ij</sub> = 1</code> &forall; i &in; I
+                    </div>
+                    <div style="background:var(--gp-surface-sunken); padding:8px 12px; border-radius:6px;">
+                      <strong>Facility Linkage:</strong><br>
+                      <code>x<sub>ij</sub> &le; y<sub>j</sub></code> &forall; i &in; I, j &in; J
+                    </div>
+                    <div style="background:var(--gp-surface-sunken); padding:8px 12px; border-radius:6px;">
+                      <strong>Capacity Limit:</strong><br>
+                      <code>&sum;<sub>i</sub> D<sub>i</sub> &middot; x<sub>ij</sub> &le; K<sub>j</sub> &middot; y<sub>j</sub></code> &forall; j &in; J
+                    </div>
+                    <div style="background:var(--gp-surface-sunken); padding:8px 12px; border-radius:6px;">
+                      <strong>Warehouse Count:</strong><br>
+                      <code>&sum;<sub>j</sub> y<sub>j</sub> = p</code> (or &le; p<sub>max</sub> in auto-size)
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--gp-text-primary);">3. Legend:</div>
+                  <div style="font-size:11.5px; color:var(--gp-text-secondary); display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:6px;">
+                    <div><code>D<sub>i</sub></code> = daily order demand of zone i</div>
+                    <div><code>d<sub>ij</sub></code> = road-adjusted distance zone i &rarr; site j</div>
+                    <div><code>c<sub>km</sub></code> = delivery transit cost per km</div>
+                    <div><code>F<sub>j</sub></code> = fixed daily warehouse lease of site j</div>
+                    <div><code>K<sub>j</sub></code> = site throughput capacity ceiling</div>
+                    <div><code>x<sub>ij</sub></code> = assignment of zone i to warehouse j</div>
+                    <div><code>y<sub>j</sub></code> = 1 if warehouse site j is opened, 0 otherwise</div>
+                    <div><code>p</code> = number of warehouses opened</div>
+                  </div>
+                </div>
+              </div>
+            </details>
+
             <!-- Executive KPI Row -->
             <div class="gp-kpi-grid">
               
-              <div class="gp-kpi-card">
+              <div class="gp-kpi-card" title="Total demand-weighted travel transit cost per day across all served zones">
                 <div class="gp-kpi-header">
                   <span class="gp-kpi-label">Simulated Delivery Cost</span>
                   <span class="gp-badge gp-badge-estimate">[Estimate]</span>
                 </div>
                 <div class="gp-kpi-value-row">
-                  <span class="gp-kpi-num" id="kpiCost">$0.00</span>
-                  <span class="gp-delta-chip gp-delta-positive" id="kpiCostBadge">-0.0%</span>
+                  <span class="gp-kpi-num tabular-nums" id="kpiCost">—</span>
+                  <span class="gp-delta-chip gp-delta-positive tabular-nums" id="kpiCostBadge">—</span>
                 </div>
-                <div class="gp-kpi-sub" id="kpiCostBaseline">Baseline: $0.00 / day</div>
+                <div class="gp-kpi-sub tabular-nums" id="kpiCostBaseline">Baseline: —</div>
               </div>
 
               <div class="gp-kpi-card">
@@ -621,20 +793,20 @@
                   <span class="gp-badge gp-badge-estimate">[Estimate]</span>
                 </div>
                 <div class="gp-kpi-value-row">
-                  <span class="gp-kpi-num" id="kpiDistance">0 <span class="gp-kpi-unit">ord·km</span></span>
-                  <span class="gp-delta-chip gp-delta-positive" id="kpiDistanceBadge">-0.0%</span>
+                  <span class="gp-kpi-num tabular-nums" id="kpiDistance">— <span class="gp-kpi-unit">ord·km</span></span>
+                  <span class="gp-delta-chip gp-delta-positive tabular-nums" id="kpiDistanceBadge">—</span>
                 </div>
-                <div class="gp-kpi-sub" id="kpiDistanceBaseline">Baseline: 0 ord·km</div>
+                <div class="gp-kpi-sub tabular-nums" id="kpiDistanceBaseline">Baseline: —</div>
               </div>
 
-              <div class="gp-kpi-card">
+              <div class="gp-kpi-card" title="Net monthly savings = (baseline transit + baseline lease) − (optimized transit + optimized lease), × 30 days">
                 <div class="gp-kpi-header">
                   <span class="gp-kpi-label">Estimated Monthly Savings</span>
                   <span class="gp-badge gp-badge-estimate">[Estimate]</span>
                 </div>
                 <div class="gp-kpi-value-row">
-                  <span class="gp-kpi-num" id="kpiMonthlySavings" style="color:var(--gp-success);">$0.00</span>
-                  <span class="gp-delta-chip gp-delta-positive">30-day</span>
+                  <span class="gp-kpi-num tabular-nums" id="kpiMonthlySavings" style="color:var(--gp-success);">—</span>
+                  <span class="gp-delta-chip gp-delta-positive tabular-nums" id="kpiMonthlySavingsBadge">30-day</span>
                 </div>
                 <div class="gp-kpi-sub">vs Single-Warehouse Baseline</div>
               </div>

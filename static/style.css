@@ -1772,8 +1772,188 @@ input[type="range"].gp-range {
   .gp-explainer-grid {
     grid-template-columns: 1fr;
   }
-  .gp-agent-drawer {
-    width: 100vw;
+}
+
+/* ==========================================================================
+   ENHANCEMENTS: CURRENCY TOGGLE, WHY GRIDPOINT, HEADROOM BAR, KA-TEX
+   ========================================================================== */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Header Currency Segmented Pill */
+.gp-currency-pill-group {
+  display: inline-flex;
+  background-color: var(--gp-surface-sunken);
+  border: 1px solid var(--gp-border);
+  border-radius: var(--gp-radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.gp-currency-pill-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: var(--gp-weight-medium);
+  color: var(--gp-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gp-currency-pill-btn:hover {
+  color: var(--gp-text-primary);
+}
+
+.gp-currency-pill-btn.active {
+  background-color: var(--gp-surface);
+  color: var(--gp-primary-600);
+  font-weight: var(--gp-weight-bold);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.gp-currency-pill-btn:focus-visible {
+  outline: 2px solid var(--gp-primary-500);
+  outline-offset: 1px;
+}
+
+/* Why GridPoint Comparison Table */
+.gp-why-section {
+  background: var(--gp-surface);
+  border: 1px solid var(--gp-border);
+  border-radius: var(--gp-radius-md);
+  margin-top: var(--gp-space-6);
+  text-align: left;
+  overflow: hidden;
+}
+
+.gp-why-summary {
+  padding: var(--gp-space-4) var(--gp-space-5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  font-weight: var(--gp-weight-bold);
+  font-size: 13.5px;
+  background-color: var(--gp-surface);
+  transition: background-color 0.15s ease;
+}
+
+.gp-why-summary:hover {
+  background-color: var(--gp-surface-sunken);
+}
+
+.gp-why-summary::-webkit-details-marker {
+  display: none;
+}
+
+.gp-why-content {
+  border-top: 1px solid var(--gp-border);
+  padding: var(--gp-space-4) var(--gp-space-5);
+}
+
+.gp-why-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.gp-why-table th, .gp-why-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gp-border);
+  text-align: left;
+}
+
+.gp-why-table th {
+  background-color: var(--gp-surface-sunken);
+  font-weight: var(--gp-weight-semibold);
+  color: var(--gp-text-secondary);
+}
+
+.gp-why-table td.gp-highlight-col {
+  background-color: rgba(59, 118, 237, 0.08);
+  font-weight: var(--gp-weight-semibold);
+  color: var(--gp-primary-700);
+  border-left: 2px solid var(--gp-primary-500);
+  border-right: 2px solid var(--gp-primary-500);
+}
+
+.gp-why-table th.gp-highlight-col {
+  background-color: var(--gp-primary-50);
+  color: var(--gp-primary-700);
+  font-weight: var(--gp-weight-bold);
+  border-left: 2px solid var(--gp-primary-500);
+  border-right: 2px solid var(--gp-primary-500);
+}
+
+.gp-why-cards {
+  display: none;
+  flex-direction: column;
+  gap: var(--gp-space-3);
+}
+
+.gp-why-card {
+  border: 1px solid var(--gp-border);
+  border-radius: var(--gp-radius-sm);
+  padding: var(--gp-space-3);
+  background-color: var(--gp-surface-sunken);
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .gp-why-table-wrapper {
+    display: none;
+  }
+  .gp-why-cards {
+    display: flex;
+  }
+}
+
+/* Headroom Progress Bar */
+.gp-headroom-progress-track {
+  height: 8px;
+  background-color: var(--gp-border);
+  border-radius: var(--gp-radius-full);
+  overflow: hidden;
+  margin-top: 6px;
+  position: relative;
+}
+
+.gp-headroom-progress-bar {
+  height: 100%;
+  border-radius: var(--gp-radius-full);
+  transition: width 0.4s ease-out;
+}
+
+.gp-headroom-progress-bar.emerald {
+  background-color: var(--gp-success);
+}
+
+.gp-headroom-progress-bar.amber {
+  background-color: var(--gp-warning);
+}
+
+.gp-headroom-progress-bar.red {
+  background-color: var(--gp-danger);
+}
+
+.gp-headroom-progress-bar.infeasible {
+  background: repeating-linear-gradient(45deg, #C43D3D, #C43D3D 10px, #E55353 10px, #E55353 20px);
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
