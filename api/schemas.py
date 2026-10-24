@@ -50,6 +50,10 @@ class OptimizeRequest(BaseModel):
     vehicle_fixed_cost: float = Field(default=150.0, ge=0, description="Fixed cost penalty per vehicle dispatched")
     time_window_start: Optional[str] = Field(default=None, description="Start of delivery time window HH:MM")
     time_window_end: Optional[str] = Field(default=None, description="End of delivery time window HH:MM")
+    distanceKm: Optional[Dict[str, Dict[str, float]]] = Field(
+        default=None,
+        description="Optional custom road/driving distance matrix in km: {hub_id: {zone_id: dist_km}}"
+    )
 
 
 class WarehouseSummary(BaseModel):

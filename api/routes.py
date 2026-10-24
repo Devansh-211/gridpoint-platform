@@ -295,8 +295,23 @@ def optimize_network(req: OptimizeRequest):
         for n in neighborhoods
     ]
 
-    # Compute Distance Matrix (Haversine by default, straight-line geographic distance)
-    matrix = get_matrix(neighborhoods, mode=req.routing_mode)
+    # Compute Distance Matrix (Haversine by default, straight-line geographic distance, or custom OSRM distanceKm)
+    if req.distanceKm:
+        matrix = DistanceMatrix(
+            neighborhood_ids=[n.id for n in neighborhoods],
+            distances_km=req.distanceKm,
+            durations_min={
+                src: {dst: (dist / 24.0) * 60.0 for dst, dist in dst_map.items()}
+                for src, dst_map in req.distanceKm.items()
+            },
+            durations_hours={
+                src: {dst: dist / 24.0 for dst, dist in dst_map.items()}
+                for src, dst_map in req.distanceKm.items()
+            },
+            mode="osrm",
+        )
+    else:
+        matrix = get_matrix(neighborhoods, mode=req.routing_mode)
     session["last_matrix"] = matrix
 
     # Determine validation count and auto_size bounds
@@ -662,8 +677,23 @@ def rank_network(req: RankRequest):
             for n in neighborhoods
         ]
 
-    # Distance matrix
-    matrix = get_matrix(neighborhoods, mode=req.routing_mode)
+    # Distance matrix (Haversine by default or user-provided road distanceKm)
+    if req.distanceKm:
+        matrix = DistanceMatrix(
+            neighborhood_ids=[n.id for n in neighborhoods],
+            distances_km=req.distanceKm,
+            durations_min={
+                src: {dst: (dist / 24.0) * 60.0 for dst, dist in dst_map.items()}
+                for src, dst_map in req.distanceKm.items()
+            },
+            durations_hours={
+                src: {dst: dist / 24.0 for dst, dist in dst_map.items()}
+                for src, dst_map in req.distanceKm.items()
+            },
+            mode="osrm",
+        )
+    else:
+        matrix = get_matrix(neighborhoods, mode=req.routing_mode)
 
     # 3. Compute ranking, alternatives, site scores and verification
     alternatives, site_scores, verification = compute_ranking(
