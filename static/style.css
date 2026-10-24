@@ -3068,9 +3068,14 @@ input[type="range"].gp-range {
 }
 
 .gp-objective-card.selected {
-  border: 2px solid #2563eb;
+  border: 2px solid #2563eb !important;
   background-color: #ffffff;
-  box-shadow: 0 0 0 1px #2563eb;
+  box-shadow: 0 0 0 1px #2563eb !important;
+}
+
+.gp-objective-card:not(.selected) {
+  border: 1px solid var(--gp-border) !important;
+  box-shadow: none !important;
 }
 
 .gp-objective-card-title {
@@ -3136,8 +3141,16 @@ input[type="range"].gp-range {
   transition: all var(--gp-transition-fast);
 }
 
-.gp-detour-card.selected {
-  border: 2px solid #2563eb;
+.gp-detour-card.selected,
+.gp-detour-card:has(input[type="radio"]:checked) {
+  border: 2px solid #2563eb !important;
+  box-shadow: 0 0 0 1px #2563eb !important;
+  background-color: #ffffff;
+}
+
+.gp-detour-card:not(.selected):not(:has(input[type="radio"]:checked)) {
+  border: 1px solid var(--gp-border) !important;
+  box-shadow: none !important;
 }
 
 .gp-detour-head {
@@ -3351,5 +3364,53 @@ input[type="range"].gp-range {
   color: var(--gp-text-secondary);
   line-height: 1.6;
 }
+
+/* Voronoi Legend Indicator */
+.gp-legend-line-voronoi {
+  display: inline-block;
+  width: 16px;
+  height: 0px;
+  border-top: 2px dashed #2563eb;
+  vertical-align: middle;
+}
+
+/* Preset Choice Cards inside Modal */
+.gp-preset-choice-card {
+  transition: all var(--gp-transition-fast);
+}
+
+.gp-preset-choice-card:hover {
+  border-color: #2563eb !important;
+  background-color: #eff6ff !important;
+  box-shadow: var(--gp-shadow-sm);
+  transform: translateY(-1px);
+}
+
+/* Dashboard Capacity Headroom & Health Gauge */
+.gp-dash-health-card {
+  background-color: var(--gp-surface);
+  border: 1px solid var(--gp-border);
+  border-radius: var(--gp-radius-md);
+  padding: 16px 20px;
+  margin-top: var(--gp-space-4);
+  box-shadow: var(--gp-shadow-xs);
+}
+
+.gp-dash-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 10px 0 6px 0;
+}
+
+.gp-dash-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  border-radius: 9999px;
+  transition: width 300ms ease;
+}
+
 
 

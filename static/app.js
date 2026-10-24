@@ -4,7 +4,18 @@
  * Strictly adheres to B2B Operations rigor and Hackathon Honesty Rules.
  */
 
-// Single Client-Side State Object
+function createSafeLayerGroup() {
+  if (typeof L !== "undefined" && typeof L.layerGroup === "function") {
+    return L.layerGroup();
+  }
+  return {
+    clearLayers: function() { return this; },
+    addLayer: function() { return this; },
+    removeLayer: function() { return this; },
+    addTo: function() { return this; },
+  };
+}
+
 const appState = {
   sessionId: "default",
   neighborhoods: [],
@@ -12,6 +23,7 @@ const appState = {
   currency: "INR", // "INR" (canonical) or "USD"
   costKmInr: 35, // Canonical storage unit in INR
   fixedCostInr: 15000, // Canonical storage unit in INR
+  distanceMode: "road_detour",
   lastOptimize: null,
   lastCompare: null,
   lastTradeoff: null,
@@ -25,20 +37,23 @@ const appState = {
   },
   layers: {
     results: {
-      candidates: L.layerGroup(),
-      neighborhoods: L.layerGroup(),
-      warehouses: L.layerGroup(),
-      assignments: L.layerGroup(),
-      radius: L.layerGroup(),
-      routes: L.layerGroup(),
+      candidates: createSafeLayerGroup(),
+      neighborhoods: createSafeLayerGroup(),
+      warehouses: createSafeLayerGroup(),
+      assignments: createSafeLayerGroup(),
+      radius: createSafeLayerGroup(),
+      routes: createSafeLayerGroup(),
     },
     demand: {
-      candidates: L.layerGroup(),
-      neighborhoods: L.layerGroup(),
+      candidates: createSafeLayerGroup(),
+      neighborhoods: createSafeLayerGroup(),
+      heatmap: createSafeLayerGroup(),
+      voronoi: createSafeLayerGroup(),
     }
   },
   tradeoffChartInstance: null,
 };
+window.appState = appState;
 
 // ============================================================================
 // CURRENCY SYSTEM (Canonical INR, USD Derived via Benchmark FX 85 INR/USD)
@@ -1002,6 +1017,10 @@ function switchView(viewId) {
 // ============================================================================
 
 function initMaps() {
+  if (typeof L === "undefined") {
+    console.warn("Leaflet library not loaded yet.");
+    return;
+  }
   const defaultCenter = [12.9716, 77.5946];
   const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
   const tileAttrib = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
@@ -1009,33 +1028,70 @@ function initMaps() {
   // Results Map
   const resultsContainer = document.getElementById("resultsMap");
   if (resultsContainer) {
-    appState.maps.results = L.map("resultsMap", {
-      center: defaultCenter,
-      zoom: 11,
-      zoomControl: true,
-    });
-    L.tileLayer(tileUrl, { maxZoom: 19, attribution: tileAttrib }).addTo(appState.maps.results);
+    if (appState.maps.results) {
+      try { appState.maps.results.remove(); } catch (e) {}
+      appState.maps.results = null;
+    }
+    if (resultsContainer._leaflet_id) {
+      try { delete resultsContainer._leaflet_id; } catch (e) { resultsContainer._leaflet_id = null; }
+    }
+    try {
+      appState.maps.results = L.map("resultsMap", {
+        center: defaultCenter,
+        zoom: 11,
+        zoomControl: true,
+      });
+      L.tileLayer(tileUrl, { maxZoom: 19, attribution: tileAttrib }).addTo(appState.maps.results);
 
-    appState.layers.results.candidates.addTo(appState.maps.results);
-    appState.layers.results.neighborhoods.addTo(appState.maps.results);
-    appState.layers.results.radius.addTo(appState.maps.results);
-    appState.layers.results.assignments.addTo(appState.maps.results);
-    appState.layers.results.routes.addTo(appState.maps.results);
-    appState.layers.results.warehouses.addTo(appState.maps.results);
+      // Re-initialize real Leaflet layer groups if needed
+      if (!appState.layers.results.candidates.addTo) appState.layers.results.candidates = L.layerGroup();
+      if (!appState.layers.results.neighborhoods.addTo) appState.layers.results.neighborhoods = L.layerGroup();
+      if (!appState.layers.results.radius.addTo) appState.layers.results.radius = L.layerGroup();
+      if (!appState.layers.results.assignments.addTo) appState.layers.results.assignments = L.layerGroup();
+      if (!appState.layers.results.routes.addTo) appState.layers.results.routes = L.layerGroup();
+      if (!appState.layers.results.warehouses.addTo) appState.layers.results.warehouses = L.layerGroup();
+
+      appState.layers.results.candidates.addTo(appState.maps.results);
+      appState.layers.results.neighborhoods.addTo(appState.maps.results);
+      appState.layers.results.radius.addTo(appState.maps.results);
+      appState.layers.results.assignments.addTo(appState.maps.results);
+      appState.layers.results.routes.addTo(appState.maps.results);
+      appState.layers.results.warehouses.addTo(appState.maps.results);
+    } catch (err) {
+      console.warn("Notice initializing resultsMap:", err);
+    }
   }
 
   // Demand Map (Data Input View)
   const demandContainer = document.getElementById("demandMap");
   if (demandContainer) {
-    appState.maps.demand = L.map("demandMap", {
-      center: defaultCenter,
-      zoom: 11,
-      zoomControl: true,
-    });
-    L.tileLayer(tileUrl, { maxZoom: 19, attribution: tileAttrib }).addTo(appState.maps.demand);
+    if (appState.maps.demand) {
+      try { appState.maps.demand.remove(); } catch (e) {}
+      appState.maps.demand = null;
+    }
+    if (demandContainer._leaflet_id) {
+      try { delete demandContainer._leaflet_id; } catch (e) { demandContainer._leaflet_id = null; }
+    }
+    try {
+      appState.maps.demand = L.map("demandMap", {
+        center: defaultCenter,
+        zoom: 11,
+        zoomControl: true,
+      });
+      L.tileLayer(tileUrl, { maxZoom: 19, attribution: tileAttrib }).addTo(appState.maps.demand);
 
-    appState.layers.demand.candidates.addTo(appState.maps.demand);
-    appState.layers.demand.neighborhoods.addTo(appState.maps.demand);
+      if (!appState.layers.demand.candidates.addTo) appState.layers.demand.candidates = L.layerGroup();
+      if (!appState.layers.demand.neighborhoods.addTo) appState.layers.demand.neighborhoods = L.layerGroup();
+      if (!appState.layers.demand.heatmap.addTo) appState.layers.demand.heatmap = L.layerGroup();
+      if (!appState.layers.demand.voronoi.addTo) appState.layers.demand.voronoi = L.layerGroup();
+
+      appState.layers.demand.candidates.addTo(appState.maps.demand);
+      appState.layers.demand.neighborhoods.addTo(appState.maps.demand);
+      appState.layers.demand.heatmap.addTo(appState.maps.demand);
+      appState.layers.demand.voronoi.addTo(appState.maps.demand);
+    } catch (err) {
+      console.warn("Notice initializing demandMap:", err);
+    }
   }
 
   // Layer Visibility Toggles on Results Map
@@ -1416,11 +1472,44 @@ function renderDataInputTable(neighborhoods) {
   if (railMeta) railMeta.textContent = `Dataset: ${neighborhoods.length} zones loaded`;
 }
 
+function generateVoronoiCells(neighborhoods) {
+  if (!neighborhoods || neighborhoods.length < 3) return [];
+  return neighborhoods.map((target, idx) => {
+    const others = neighborhoods
+      .filter((_, i) => i !== idx)
+      .map(other => {
+        const dLat = other.latitude - target.latitude;
+        const dLon = other.longitude - target.longitude;
+        const distSq = dLat * dLat + dLon * dLon;
+        const angle = Math.atan2(dLat, dLon);
+        return { other, distSq, angle };
+      })
+      .sort((a, b) => a.distSq - b.distSq)
+      .slice(0, 6);
+
+    others.sort((a, b) => a.angle - b.angle);
+
+    const coords = others.map(item => {
+      const latMid = (target.latitude + item.other.latitude) / 2;
+      const lonMid = (target.longitude + item.other.longitude) / 2;
+      return [latMid, lonMid];
+    });
+
+    return {
+      neighborhood_id: target.neighborhood_id,
+      name: target.name,
+      coords: coords
+    };
+  });
+}
+
 function renderDemandMap(neighborhoods) {
   if (!appState.maps.demand || !neighborhoods || neighborhoods.length === 0) return;
 
-  appState.layers.demand.candidates.clearLayers();
-  appState.layers.demand.neighborhoods.clearLayers();
+  if (appState.layers.demand.candidates?.clearLayers) appState.layers.demand.candidates.clearLayers();
+  if (appState.layers.demand.neighborhoods?.clearLayers) appState.layers.demand.neighborhoods.clearLayers();
+  if (appState.layers.demand.heatmap?.clearLayers) appState.layers.demand.heatmap.clearLayers();
+  if (appState.layers.demand.voronoi?.clearLayers) appState.layers.demand.voronoi.clearLayers();
 
   const lats = neighborhoods.map(n => n.latitude);
   const lons = neighborhoods.map(n => n.longitude);
@@ -1432,7 +1521,7 @@ function renderDemandMap(neighborhoods) {
   const maxDemand = Math.max(...neighborhoods.map(n => n.daily_orders));
 
   neighborhoods.forEach(n => {
-    // Candidate marker
+    // 1. Candidate marker
     const cMarker = L.circleMarker([n.latitude, n.longitude], {
       radius: 4,
       fillColor: "#94A3B8",
@@ -1441,9 +1530,20 @@ function renderDemandMap(neighborhoods) {
       opacity: 0.6,
       fillOpacity: 0.3,
     }).bindTooltip(`Candidate Site: <b>${n.name}</b> (${n.neighborhood_id})`);
-    appState.layers.demand.candidates.addLayer(cMarker);
+    if (appState.layers.demand.candidates?.addLayer) appState.layers.demand.candidates.addLayer(cMarker);
 
-    // Demand node
+    // 2. Heatmap Density Glow Circle
+    const norm = n.daily_orders / maxDemand;
+    const heatColor = norm >= 0.75 ? "#ef4444" : (norm >= 0.45 ? "#3b82f6" : "#06b6d4");
+    const hCircle = L.circle([n.latitude, n.longitude], {
+      radius: 1100 + norm * 1800,
+      stroke: false,
+      fillColor: heatColor,
+      fillOpacity: 0.16 + norm * 0.18,
+    });
+    if (appState.layers.demand.heatmap?.addLayer) appState.layers.demand.heatmap.addLayer(hCircle);
+
+    // 3. Demand Centroid Node
     const radius = 4 + (n.daily_orders / maxDemand) * 10;
     const nMarker = L.circleMarker([n.latitude, n.longitude], {
       radius: radius,
@@ -1459,7 +1559,23 @@ function renderDemandMap(neighborhoods) {
     });
 
     nMarker.bindTooltip(`<b>${n.name}</b><br>${n.daily_orders.toLocaleString()} ord/day`);
-    appState.layers.demand.neighborhoods.addLayer(nMarker);
+    if (appState.layers.demand.neighborhoods?.addLayer) appState.layers.demand.neighborhoods.addLayer(nMarker);
+  });
+
+  // 4. Voronoi Partition Catchments
+  const cells = generateVoronoiCells(neighborhoods);
+  cells.forEach(cell => {
+    if (cell.coords.length >= 3 && appState.layers.demand.voronoi?.addLayer) {
+      const poly = L.polygon(cell.coords, {
+        color: "#2563eb",
+        weight: 1.2,
+        opacity: 0.45,
+        dashArray: "3, 4",
+        fillColor: "#3b82f6",
+        fillOpacity: 0.04,
+      }).bindTooltip(`Voronoi Territory: <b>${cell.name}</b>`);
+      appState.layers.demand.voronoi.addLayer(poly);
+    }
   });
 
   // Update Hero KPI stats
@@ -2336,9 +2452,13 @@ function renderFleetRoutesTable(cvrp) {
 // ============================================================================
 
 function updateDashboardStats() {
-  const zonesCount = appState.neighborhoods.length || 36;
-  const totalDem = appState.neighborhoods.reduce((acc, n) => acc + (n.daily_orders || 0), 0) || 10240;
-  const p = parseInt(document.getElementById("inputConfigP").value) || 3;
+  const zonesCount = appState.neighborhoods?.length || 36;
+  const totalDem = appState.neighborhoods && appState.neighborhoods.length > 0
+    ? appState.neighborhoods.reduce((acc, n) => acc + (n.daily_orders || 0), 0)
+    : 10240;
+  const p = parseInt(document.getElementById("inputConfigP")?.value) || 3;
+  const cap = parseFloat(document.getElementById("inputConfigCap")?.value) || 4000;
+  const totalCap = p * cap;
 
   const elZones = document.getElementById("dashKpiZones");
   if (elZones) elZones.textContent = zonesCount;
@@ -2355,6 +2475,47 @@ function updateDashboardStats() {
       elSavings.textContent = formatMoney(0, appState.currency, { compact: true });
     }
   }
+
+  // Update Headroom & Capacity Gauge on Dashboard
+  const utilPct = totalCap > 0 ? (totalDem / totalCap) * 100 : 0;
+  const headroom = totalCap - totalDem;
+
+  const elCapBadge = document.getElementById("dashCapacityBadge");
+  if (elCapBadge) {
+    if (utilPct > 100) {
+      elCapBadge.className = "gp-badge gp-badge-danger";
+      elCapBadge.textContent = `${utilPct.toFixed(1)}% Capacity Overloaded`;
+    } else if (utilPct > 90) {
+      elCapBadge.className = "gp-badge gp-badge-warning";
+      elCapBadge.textContent = `${utilPct.toFixed(1)}% Tight Headroom`;
+    } else {
+      elCapBadge.className = "gp-badge gp-badge-optimal";
+      elCapBadge.textContent = `${utilPct.toFixed(1)}% Utilization (Healthy)`;
+    }
+  }
+
+  const elCapFill = document.getElementById("dashCapacityFill");
+  if (elCapFill) {
+    elCapFill.style.width = `${Math.min(100, Math.max(5, utilPct))}%`;
+    elCapFill.style.background = utilPct > 100 ? "#ef4444" : (utilPct > 90 ? "#f59e0b" : "linear-gradient(90deg, #2563eb, #3b82f6)");
+  }
+
+  const elCapDem = document.getElementById("dashCapDemandText");
+  if (elCapDem) elCapDem.textContent = totalDem.toLocaleString();
+
+  const elCapHeadroom = document.getElementById("dashCapHeadroomText");
+  if (elCapHeadroom) {
+    if (headroom >= 0) {
+      elCapHeadroom.style.color = "var(--gp-success)";
+      elCapHeadroom.textContent = `+${headroom.toLocaleString()} orders buffer`;
+    } else {
+      elCapHeadroom.style.color = "var(--gp-danger)";
+      elCapHeadroom.textContent = `${headroom.toLocaleString()} orders deficit!`;
+    }
+  }
+
+  const elCapTotal = document.getElementById("dashCapTotalText");
+  if (elCapTotal) elCapTotal.textContent = `${totalCap.toLocaleString()} (${p} × ${cap.toLocaleString()})`;
 }
 
 function updateLiveSummary() {
@@ -2442,26 +2603,39 @@ function setupEventListeners() {
   });
 
   // 2. Brand Box Logo click -> Dashboard
-  document.getElementById("brandHomeBtn").addEventListener("click", () => switchView("viewDashboard"));
+  document.getElementById("brandHomeBtn")?.addEventListener("click", () => switchView("viewDashboard"));
 
   // 3. Landing Page CTAs
-  document.getElementById("btnLandingLoadDemo").addEventListener("click", async () => {
+  document.getElementById("btnLandingLoadDemo")?.addEventListener("click", async () => {
     await loadDemoData();
     switchView("viewResults");
   });
-  document.getElementById("btnLandingGoData").addEventListener("click", () => switchView("viewData"));
+  document.getElementById("btnLandingGoData")?.addEventListener("click", () => switchView("viewData"));
+  document.getElementById("btnLandingOpenAgent")?.addEventListener("click", () => toggleAgentDrawer(true));
 
-  // 4. Dashboard Quick Action Cards & Buttons
+  // 4. Dashboard Quick Action Cards & Buttons (Overview page)
   document.querySelectorAll("[data-jump]").forEach(el => {
     el.addEventListener("click", () => {
       const target = el.getAttribute("data-jump");
       if (target) switchView(target);
     });
   });
-  document.getElementById("btnDashQuickData").addEventListener("click", () => switchView("viewData"));
-  document.getElementById("btnDashQuickOptimize").addEventListener("click", async () => {
+
+  document.getElementById("btnDashQuickData")?.addEventListener("click", () => switchView("viewData"));
+  document.getElementById("btnDashQuickAgent")?.addEventListener("click", () => toggleAgentDrawer(true));
+  document.getElementById("btnDashQuickOptimize")?.addEventListener("click", async () => {
     const ok = await runOptimization();
     if (ok) switchView("viewResults");
+  });
+
+  // One-Click Strategy Presets on Dashboard
+  document.querySelectorAll("[data-dash-preset]").forEach(card => {
+    card.addEventListener("click", async () => {
+      const pKey = card.getAttribute("data-dash-preset");
+      applyPresetConfig(pKey);
+      const ok = await runOptimization();
+      if (ok) switchView("viewResults");
+    });
   });
 
   // 5. Header Bar Global Actions
@@ -2489,7 +2663,59 @@ function setupEventListeners() {
     });
   }
 
-  document.getElementById("btnGlobalLoadDemo").addEventListener("click", async () => {
+  // Header Logistics Assistant
+  document.getElementById("btnHeaderAgentAssistant")?.addEventListener("click", () => toggleAgentDrawer(true));
+
+  // Header Presets Modal
+  document.getElementById("btnHeaderLoadPreset")?.addEventListener("click", () => {
+    document.getElementById("presetModal")?.classList.add("active");
+  });
+  document.getElementById("btnClosePresetModal")?.addEventListener("click", () => {
+    document.getElementById("presetModal")?.classList.remove("active");
+  });
+  document.getElementById("btnCancelPresetModal")?.addEventListener("click", () => {
+    document.getElementById("presetModal")?.classList.remove("active");
+  });
+  document.querySelectorAll("[data-apply-preset]").forEach(card => {
+    card.addEventListener("click", () => {
+      const pKey = card.getAttribute("data-apply-preset");
+      applyPresetConfig(pKey);
+      document.getElementById("presetModal")?.classList.remove("active");
+    });
+  });
+
+  // Header System Notifications Modal
+  document.getElementById("btnHeaderNotifications")?.addEventListener("click", () => {
+    document.getElementById("notificationsModal")?.classList.add("active");
+  });
+  document.getElementById("btnCloseNotificationsModal")?.addEventListener("click", () => {
+    document.getElementById("notificationsModal")?.classList.remove("active");
+  });
+  document.getElementById("btnOkNotificationsModal")?.addEventListener("click", () => {
+    document.getElementById("notificationsModal")?.classList.remove("active");
+  });
+
+  // Header User Profile Modal
+  document.getElementById("btnHeaderProfile")?.addEventListener("click", () => {
+    const pSess = document.getElementById("profileSessionId");
+    if (pSess) pSess.textContent = appState.sessionId || "default";
+    document.getElementById("profileModal")?.classList.add("active");
+  });
+  document.getElementById("btnCloseProfileModal")?.addEventListener("click", () => {
+    document.getElementById("profileModal")?.classList.remove("active");
+  });
+  document.getElementById("btnOkProfileModal")?.addEventListener("click", () => {
+    document.getElementById("profileModal")?.classList.remove("active");
+  });
+  document.getElementById("btnProfileResetSession")?.addEventListener("click", async () => {
+    document.getElementById("profileModal")?.classList.remove("active");
+    await loadDemoData();
+    setDetourMode("road_detour");
+    setPriorityPreset("cost");
+    showToast("Workspace session reset to defaults.", "info");
+  });
+
+  document.getElementById("btnGlobalLoadDemo")?.addEventListener("click", async () => {
     await loadDemoData();
     switchView("viewResults");
   });
@@ -2499,7 +2725,7 @@ function setupEventListeners() {
   });
 
   // 6. Data Input View Actions
-  document.getElementById("btnDataLoadDemo").addEventListener("click", loadDemoData);
+  document.getElementById("btnDataLoadDemo")?.addEventListener("click", loadDemoData);
 
   // CSV File Upload
   document.getElementById("csvFileInput").addEventListener("change", async (e) => {
@@ -2775,7 +3001,33 @@ function setupEventListeners() {
     });
   }
 
-  // Priority Objective Function Cards (image_0.png)
+  // Priority Objective Function Synchronization
+  function setPriorityPreset(preset) {
+    appState.priorityPreset = preset;
+    agentState.knownParams.priority_preset = preset;
+
+    const objCards = [
+      { el: document.getElementById("optObjCost"), preset: "cost" },
+      { el: document.getElementById("optObjSpeed"), preset: "speed" },
+      { el: document.getElementById("optObjCO2"), preset: "sustainability" }
+    ];
+
+    objCards.forEach(({ el, preset: p }) => {
+      if (!el) return;
+      const isMatch = (p === preset);
+      el.classList.toggle("selected", isMatch);
+      const badge = el.querySelector(".gp-badge-obj-selected, .gp-badge-obj-standby");
+      if (badge) {
+        badge.className = isMatch ? "gp-badge-obj-selected" : "gp-badge-obj-standby";
+        badge.textContent = isMatch ? "SELECTED" : "STANDBY";
+      }
+    });
+
+    document.querySelectorAll(".gp-preset-pill").forEach(pill => {
+      pill.classList.toggle("active", pill.getAttribute("data-preset") === preset);
+    });
+  }
+
   const objCards = [
     { el: document.getElementById("optObjCost"), preset: "cost" },
     { el: document.getElementById("optObjSpeed"), preset: "speed" },
@@ -2784,38 +3036,18 @@ function setupEventListeners() {
 
   objCards.forEach(({ el, preset }) => {
     if (!el) return;
-    el.addEventListener("click", () => {
-      objCards.forEach(c => {
-        if (!c.el) return;
-        c.el.classList.remove("selected");
-        const badge = c.el.querySelector(".gp-badge-obj-selected, .gp-badge-obj-standby");
-        if (badge) {
-          badge.className = "gp-badge-obj-standby";
-          badge.textContent = "STANDBY";
-        }
-      });
-      el.classList.add("selected");
-      const badge = el.querySelector(".gp-badge-obj-standby, .gp-badge-obj-selected");
-      if (badge) {
-        badge.className = "gp-badge-obj-selected";
-        badge.textContent = "SELECTED";
-      }
-      appState.priorityPreset = preset;
-      agentState.knownParams.priority_preset = preset;
-    });
+    el.addEventListener("click", () => setPriorityPreset(preset));
   });
 
   // Legacy Priority Presets Pills (compatibility)
   document.querySelectorAll(".gp-preset-pill").forEach(pill => {
     pill.addEventListener("click", () => {
-      document.querySelectorAll(".gp-preset-pill").forEach(p => p.classList.remove("active"));
-      pill.classList.add("active");
-      appState.priorityPreset = pill.getAttribute("data-preset");
-      agentState.knownParams.priority_preset = appState.priorityPreset;
+      const p = pill.getAttribute("data-preset");
+      if (p) setPriorityPreset(p);
     });
   });
 
-  // Detour Mode 2-Option Cards
+  // Detour Mode 2-Option Cards & Synchronization
   const cardProxy = document.getElementById("cardDetourProxy");
   const cardHaversine = document.getElementById("cardDetourHaversine");
   const radRoad = document.getElementById("radioDetourRoad");
@@ -2823,23 +3055,58 @@ function setupEventListeners() {
   const selDist = document.getElementById("selectDistanceMode");
 
   function setDetourMode(mode) {
-    if (mode === "road_detour") {
-      cardProxy?.classList.add("selected");
-      cardHaversine?.classList.remove("selected");
-      if (radRoad) radRoad.checked = true;
-      if (selDist) selDist.value = "road_detour";
-    } else {
-      cardHaversine?.classList.add("selected");
-      cardProxy?.classList.remove("selected");
-      if (radHav) radHav.checked = true;
-      if (selDist) selDist.value = "haversine";
+    const isRoad = (mode === "road_detour");
+    cardProxy?.classList.toggle("selected", isRoad);
+    cardHaversine?.classList.toggle("selected", !isRoad);
+    if (radRoad) radRoad.checked = isRoad;
+    if (radHav) radHav.checked = !isRoad;
+    if (selDist) {
+      selDist.value = mode;
+      selDist.dispatchEvent(new Event("change"));
     }
+    appState.distanceMode = mode;
   }
 
   cardProxy?.addEventListener("click", () => setDetourMode("road_detour"));
   cardHaversine?.addEventListener("click", () => setDetourMode("haversine"));
   radRoad?.addEventListener("change", () => setDetourMode("road_detour"));
   radHav?.addEventListener("change", () => setDetourMode("haversine"));
+
+  function applyPresetConfig(presetKey) {
+    const sliderP = document.getElementById("inputConfigP");
+    const inputCap = document.getElementById("inputConfigCap");
+    const inputRad = document.getElementById("inputConfigRadius");
+
+    if (presetKey === "speed") {
+      if (sliderP) { sliderP.value = 4; sliderP.dispatchEvent(new Event("input")); }
+      if (inputCap) { inputCap.value = 3500; inputCap.dispatchEvent(new Event("input")); }
+      if (inputRad) { inputRad.value = 8; inputRad.dispatchEvent(new Event("input")); }
+      setPriorityPreset("speed");
+      setDetourMode("road_detour");
+      showToast("Applied Quick-Commerce Express preset (4 sites, 8km radius).", "success");
+    } else if (presetKey === "cost") {
+      if (sliderP) { sliderP.value = 2; sliderP.dispatchEvent(new Event("input")); }
+      if (inputCap) { inputCap.value = 6000; inputCap.dispatchEvent(new Event("input")); }
+      if (inputRad) { inputRad.value = 25; inputRad.dispatchEvent(new Event("input")); }
+      setPriorityPreset("cost");
+      setDetourMode("road_detour");
+      showToast("Applied Cost Focus (Lean) preset (2 sites, 6,000 cap).", "success");
+    } else if (presetKey === "sustainability") {
+      if (sliderP) { sliderP.value = 3; sliderP.dispatchEvent(new Event("input")); }
+      if (inputCap) { inputCap.value = 4500; inputCap.dispatchEvent(new Event("input")); }
+      if (inputRad) { inputRad.value = 15; inputRad.dispatchEvent(new Event("input")); }
+      setPriorityPreset("sustainability");
+      setDetourMode("road_detour");
+      showToast("Applied Green Corridor preset (3 sites, EV routing).", "success");
+    } else {
+      if (sliderP) { sliderP.value = 3; sliderP.dispatchEvent(new Event("input")); }
+      if (inputCap) { inputCap.value = 4000; inputCap.dispatchEvent(new Event("input")); }
+      if (inputRad) { inputRad.value = 25; inputRad.dispatchEvent(new Event("input")); }
+      setPriorityPreset("cost");
+      setDetourMode("road_detour");
+      showToast("Applied Bengaluru Standard preset.", "success");
+    }
+  }
 
   // Config Action Buttons
   document.getElementById("btnConfigResetDefaults")?.addEventListener("click", () => {
@@ -2868,6 +3135,7 @@ function setupEventListeners() {
       inpKm.dispatchEvent(new Event("input"));
     }
     setDetourMode("road_detour");
+    setPriorityPreset("cost");
     showToast("Reset network configuration to system defaults.", "success");
   });
 
@@ -2914,17 +3182,29 @@ function setupEventListeners() {
     if (linkSummary) linkSummary.textContent = `${active} of 4 Active`;
   }
 
+  function syncLayerVisibility() {
+    updateLayerSummary();
+    if (!appState.maps.demand) return;
+    if (chkCand) {
+      if (chkCand.checked) appState.maps.demand.addLayer(appState.layers.demand.candidates);
+      else appState.maps.demand.removeLayer(appState.layers.demand.candidates);
+    }
+    if (chkCent) {
+      if (chkCent.checked) appState.maps.demand.addLayer(appState.layers.demand.neighborhoods);
+      else appState.maps.demand.removeLayer(appState.layers.demand.neighborhoods);
+    }
+    if (chkHeat) {
+      if (chkHeat.checked) appState.maps.demand.addLayer(appState.layers.demand.heatmap);
+      else appState.maps.demand.removeLayer(appState.layers.demand.heatmap);
+    }
+    if (chkVor) {
+      if (chkVor.checked) appState.maps.demand.addLayer(appState.layers.demand.voronoi);
+      else appState.maps.demand.removeLayer(appState.layers.demand.voronoi);
+    }
+  }
+
   [chkHeat, chkCent, chkVor, chkCand].forEach(chk => {
-    chk?.addEventListener("change", () => {
-      updateLayerSummary();
-      if (chk === chkCand) {
-        if (chk.checked) appState.maps.demand?.addLayer(appState.layers.demand.candidates);
-        else appState.maps.demand?.removeLayer(appState.layers.demand.candidates);
-      } else if (chk === chkCent) {
-        if (chk.checked) appState.maps.demand?.addLayer(appState.layers.demand.neighborhoods);
-        else appState.maps.demand?.removeLayer(appState.layers.demand.neighborhoods);
-      }
-    });
+    chk?.addEventListener("change", syncLayerVisibility);
   });
 
   linkSummary?.addEventListener("click", () => {
@@ -2932,7 +3212,7 @@ function setupEventListeners() {
     [chkHeat, chkCent, chkVor, chkCand].forEach(c => {
       if (c) c.checked = !allChecked;
     });
-    updateLayerSummary();
+    syncLayerVisibility();
   });
 
   // Zone Inspector Reassign Hub Button
@@ -3209,18 +3489,43 @@ function setupEventListeners() {
 
   // Infeasibility Modal Close
   const modalError = document.getElementById("errorModal");
-  document.getElementById("btnErrorModalClose").addEventListener("click", () => modalError.classList.remove("active"));
-  document.getElementById("btnErrorModalOk").addEventListener("click", () => modalError.classList.remove("active"));
+  document.getElementById("btnErrorModalClose")?.addEventListener("click", () => modalError?.classList.remove("active"));
+  document.getElementById("btnErrorModalOk")?.addEventListener("click", () => modalError?.classList.remove("active"));
 }
 
 // ============================================================================
 // 17. ONLOAD INITIALIZATION
 // ============================================================================
 
-window.addEventListener("DOMContentLoaded", async () => {
-  initMaps();
-  setupEventListeners();
-  updateAgentFabVisibility(appState.currentView);
-  await checkHealth();
-  await loadDemoData();
-});
+function initializeApp() {
+  // 1. Setup event listeners first so UI buttons and controls ALWAYS function
+  try {
+    setupEventListeners();
+  } catch (err) {
+    console.error("Critical error setting up event listeners:", err);
+  }
+
+  // 2. Safe map initialization (protected against container reuse)
+  try {
+    initMaps();
+  } catch (err) {
+    console.warn("Notice during map initialization:", err);
+  }
+
+  // 3. UI visibility & state
+  try {
+    updateAgentFabVisibility(appState.currentView);
+  } catch (err) {
+    console.warn("Notice updating agent FAB visibility:", err);
+  }
+
+  // 4. Async health check and initial dataset load
+  checkHealth().catch(err => console.warn("Health check failed:", err));
+  loadDemoData().catch(err => console.warn("Demo data load failed:", err));
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeApp);
+} else {
+  initializeApp();
+}

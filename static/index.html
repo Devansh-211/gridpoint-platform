@@ -363,15 +363,15 @@
                 <p style="font-size:13px; color:var(--gp-text-secondary); margin-top:2px;">Current optimization session, loaded datasets, and active solver parameters.</p>
               </div>
               <div style="display:flex; gap:var(--gp-space-2);">
-                <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnDashQuickData">Input Data</button>
+                <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnDashQuickData" title="Inspect demand map and upload zones">📂 Input Data</button>
                 <button type="button" class="gp-btn gp-btn-secondary gp-btn-sm" id="btnDashQuickAgent" style="color:#2563eb; background:#eff6ff; border-color:#bfdbfe; font-weight:600;">💬 Logistics Assistant</button>
-                <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnDashQuickOptimize">Run Optimization</button>
+                <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnDashQuickOptimize">⚡ Run Optimization</button>
               </div>
             </div>
 
             <!-- Session Stats Row -->
             <div class="gp-kpi-grid">
-              <div class="gp-kpi-card">
+              <div class="gp-kpi-card" style="cursor:pointer;" data-jump="viewData">
                 <div class="gp-kpi-header">
                   <span class="gp-kpi-label">Delivery Zones</span>
                   <span class="gp-badge gp-badge-estimate">[Live]</span>
@@ -380,10 +380,10 @@
                   <span class="gp-kpi-num" id="dashKpiZones">36</span>
                   <span class="gp-delta-chip gp-delta-neutral">Bengaluru</span>
                 </div>
-                <div class="gp-kpi-sub">Aggregated demand nodes</div>
+                <div class="gp-kpi-sub">Aggregated demand nodes &rarr;</div>
               </div>
 
-              <div class="gp-kpi-card">
+              <div class="gp-kpi-card" style="cursor:pointer;" data-jump="viewData">
                 <div class="gp-kpi-header">
                   <span class="gp-kpi-label">Total Daily Demand</span>
                   <span class="gp-badge gp-badge-estimate">[Live]</span>
@@ -392,10 +392,10 @@
                   <span class="gp-kpi-num" id="dashKpiDemand">10,240</span>
                   <span class="gp-kpi-unit">orders/day</span>
                 </div>
-                <div class="gp-kpi-sub">Across all delivery zones</div>
+                <div class="gp-kpi-sub">Across all delivery zones &rarr;</div>
               </div>
 
-              <div class="gp-kpi-card">
+              <div class="gp-kpi-card" style="cursor:pointer;" data-jump="viewConfig">
                 <div class="gp-kpi-header">
                   <span class="gp-kpi-label">Configured Warehouses</span>
                   <span class="gp-badge gp-badge-estimate">[Param]</span>
@@ -404,10 +404,10 @@
                   <span class="gp-kpi-num" id="dashKpiP">3</span>
                   <span class="gp-kpi-unit">sites (p)</span>
                 </div>
-                <div class="gp-kpi-sub">Throughput: 4,000 ord/site</div>
+                <div class="gp-kpi-sub">Throughput: 4,000 ord/site &rarr;</div>
               </div>
 
-              <div class="gp-kpi-card">
+              <div class="gp-kpi-card" style="cursor:pointer;" data-jump="viewResults">
                 <div class="gp-kpi-header">
                   <span class="gp-kpi-label">Est. Monthly Savings</span>
                   <span class="gp-badge gp-badge-estimate">[Estimate]</span>
@@ -416,34 +416,93 @@
                   <span class="gp-kpi-num" id="dashKpiSavings" style="color:var(--gp-success);">₹0</span>
                   <span class="gp-delta-chip gp-delta-positive" id="dashKpiSavingsChip">30-day</span>
                 </div>
-                <div class="gp-kpi-sub">vs Single-Warehouse Baseline</div>
+                <div class="gp-kpi-sub">vs Single-Warehouse Baseline &rarr;</div>
+              </div>
+            </div>
+
+            <!-- Network Capacity Headroom & Health Monitor -->
+            <div class="gp-dash-health-card">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="gp-status-dot-emerald"></span>
+                  <span style="font-weight:700; font-size:13.5px; color:var(--gp-text-primary);">Network Capacity Headroom &amp; Solver Feasibility</span>
+                </div>
+                <span class="gp-badge gp-badge-optimal" id="dashCapacityBadge">85.3% Utilization (Healthy)</span>
+              </div>
+              <div class="gp-dash-progress-track">
+                <div class="gp-dash-progress-fill" id="dashCapacityFill" style="width:85.3%;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--gp-text-secondary);">
+                <span>Daily Demand: <strong id="dashCapDemandText">10,240</strong> orders/day</span>
+                <span>System Headroom: <strong style="color:var(--gp-success);" id="dashCapHeadroomText">+1,760 orders buffer</strong></span>
+                <span>Max Capacity: <strong id="dashCapTotalText">12,000</strong> orders/day (3 × 4,000)</span>
+              </div>
+            </div>
+
+            <!-- Strategy Presets Quick-Launch Bar -->
+            <div style="margin-top:var(--gp-space-4);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:13px; font-weight:700; color:var(--gp-text-primary);">⚡ One-Click Strategy Launchers</span>
+                <span style="font-size:11px; color:var(--gp-text-tertiary);">Directly configures solver and computes exact network</span>
+              </div>
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+                <div class="gp-card gp-card-body gp-preset-choice-card" data-dash-preset="speed" style="cursor:pointer; padding:12px 14px; border:1px solid var(--gp-border); border-radius:8px; background:#ffffff;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:12.5px; color:#2563eb;">⚡ Quick-Commerce Express</strong>
+                    <span class="gp-badge gp-badge-estimate" style="font-size:9.5px;">Sub-45m</span>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--gp-text-secondary); margin-top:4px;">4 micro-hubs, 3,500 cap, &lt;8km SLA. Fast fulfillment.</div>
+                  <div style="margin-top:8px; font-size:11px; font-weight:600; color:#2563eb;">Apply &amp; Run &rarr;</div>
+                </div>
+
+                <div class="gp-card gp-card-body gp-preset-choice-card" data-dash-preset="cost" style="cursor:pointer; padding:12px 14px; border:1px solid var(--gp-border); border-radius:8px; background:#ffffff;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:12.5px; color:#10b981;">💰 Cost Focus (Lean)</strong>
+                    <span class="gp-badge gp-badge-optimal" style="font-size:9.5px;">Min Capex</span>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--gp-text-secondary); margin-top:4px;">2 consolidated hubs, 6,000 cap. Minimal fixed leases.</div>
+                  <div style="margin-top:8px; font-size:11px; font-weight:600; color:#10b981;">Apply &amp; Run &rarr;</div>
+                </div>
+
+                <div class="gp-card gp-card-body gp-preset-choice-card" data-dash-preset="sustainability" style="cursor:pointer; padding:12px 14px; border:1px solid var(--gp-border); border-radius:8px; background:#ffffff;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:12.5px; color:#059669;">🌱 Low-CO2 Corridors</strong>
+                    <span class="gp-badge gp-badge-estimate" style="font-size:9.5px;">EV-Optimized</span>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--gp-text-secondary); margin-top:4px;">3 EV-routed hubs, 4,500 cap. Internalized carbon pricing.</div>
+                  <div style="margin-top:8px; font-size:11px; font-weight:600; color:#059669;">Apply &amp; Run &rarr;</div>
+                </div>
               </div>
             </div>
 
             <!-- Workflow Guidance Cards -->
-            <div class="gp-dash-steps-grid">
-              <div class="gp-dash-step-card" data-jump="viewData">
+            <div class="gp-dash-steps-grid" style="margin-top:var(--gp-space-4);">
+              <div class="gp-dash-step-card" data-jump="viewData" style="cursor:pointer;">
                 <span class="gp-dash-step-num">Step 1</span>
-                <h4>Inspect & Load Data</h4>
-                <p>Upload delivery zone CSV files or load curated synthetic demand clusters with coordinates.</p>
+                <h4>Inspect &amp; Load Data</h4>
+                <p>Upload delivery zone CSV files, inspect geographic demand heatmap, or sample synthetic clusters.</p>
+                <div style="margin-top:10px; font-size:11.5px; font-weight:600; color:#2563eb;">Open Demand Map &rarr;</div>
               </div>
 
-              <div class="gp-dash-step-card" data-jump="viewConfig">
+              <div class="gp-dash-step-card" data-jump="viewConfig" style="cursor:pointer;">
                 <span class="gp-dash-step-num">Step 2</span>
                 <h4>Configure Constraints</h4>
-                <p>Set warehouse count (p), capacity caps, max service radius, and priority presets.</p>
+                <p>Set warehouse count (p), capacity caps, max service radius, and priority objective vectors.</p>
+                <div style="margin-top:10px; font-size:11.5px; font-weight:600; color:#2563eb;">Adjust Constraints &rarr;</div>
               </div>
 
-              <div class="gp-dash-step-card" data-jump="viewResults">
+              <div class="gp-dash-step-card" data-jump="viewResults" style="cursor:pointer;">
                 <span class="gp-dash-step-num">Step 3</span>
                 <h4>Examine Optimization</h4>
                 <p>Inspect geographic assignments, cluster lines, "Why here?" logic, and facility manifests.</p>
+                <div style="margin-top:10px; font-size:11.5px; font-weight:600; color:#2563eb;">View Last Solution &rarr;</div>
               </div>
 
-              <div class="gp-dash-step-card" data-jump="viewScenarios">
+              <div class="gp-dash-step-card" data-jump="viewScenarios" style="cursor:pointer;">
                 <span class="gp-dash-step-num">Step 4</span>
                 <h4>Scenario Stress Test</h4>
-                <p>Simulate festival surges, weekend spikes, and single-point-of-failure outages.</p>
+                <p>Simulate festival demand surges, weekend volume spikes, and single-point facility outages.</p>
+                <div style="margin-top:10px; font-size:11.5px; font-weight:600; color:#2563eb;">Run Scenario Stress Test &rarr;</div>
               </div>
             </div>
 
@@ -1798,6 +1857,127 @@
       <div id="errorModalBody" style="font-size:13px; color:var(--gp-text-secondary); line-height:1.5;"></div>
       <div style="display:flex; justify-content:flex-end; margin-top:var(--gp-space-4);">
         <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnErrorModalOk">Acknowledge & Adjust</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Presets Modal -->
+  <div class="gp-modal-backdrop" id="presetModal">
+    <div class="gp-modal" style="padding:var(--gp-space-5); max-width:640px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--gp-space-2);">
+        <div>
+          <h3 style="font-size:16px; font-weight:700; color:var(--gp-text-primary);">Network Strategy Presets</h3>
+          <p style="font-size:12px; color:var(--gp-text-secondary); margin-top:2px;">Select an operational preset to calibrate CBC solver parameters</p>
+        </div>
+        <button class="gp-btn gp-btn-ghost gp-btn-sm" id="btnClosePresetModal">&times;</button>
+      </div>
+      <div class="gp-preset-modal-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0;">
+        <div class="gp-preset-choice-card" data-apply-preset="speed" style="border:1px solid var(--gp-border); border-radius:8px; padding:12px; cursor:pointer; background:#f8fafc;">
+          <div style="font-weight:700; font-size:13px; color:#2563eb; display:flex; justify-content:space-between;">
+            <span>⚡ Quick-Commerce</span>
+            <span class="gp-badge gp-badge-estimate" style="font-size:10px;">Sub-45m</span>
+          </div>
+          <div style="font-size:11.5px; color:var(--gp-text-secondary); margin-top:4px;">4 micro-hubs, 3,500 cap, 8 km SLA radius. Prioritizes proximity and speed.</div>
+          <div style="font-family:var(--gp-font-family-mono); font-size:10.5px; color:#64748b; margin-top:8px;">p=4 • Cap: 3.5k • R_max: 8km</div>
+        </div>
+        <div class="gp-preset-choice-card" data-apply-preset="cost" style="border:1px solid var(--gp-border); border-radius:8px; padding:12px; cursor:pointer; background:#f8fafc;">
+          <div style="font-weight:700; font-size:13px; color:#10b981; display:flex; justify-content:space-between;">
+            <span>💰 Cost Focus (Lean)</span>
+            <span class="gp-badge gp-badge-optimal" style="font-size:10px;">Min Capex</span>
+          </div>
+          <div style="font-size:11.5px; color:var(--gp-text-secondary); margin-top:4px;">2 consolidated sites, 6,000 cap, 25 km radius. Minimizes fixed lease costs.</div>
+          <div style="font-family:var(--gp-font-family-mono); font-size:10.5px; color:#64748b; margin-top:8px;">p=2 • Cap: 6k • R_max: 25km</div>
+        </div>
+        <div class="gp-preset-choice-card" data-apply-preset="sustainability" style="border:1px solid var(--gp-border); border-radius:8px; padding:12px; cursor:pointer; background:#f8fafc;">
+          <div style="font-weight:700; font-size:13px; color:#059669; display:flex; justify-content:space-between;">
+            <span>🌱 Green Corridor</span>
+            <span class="gp-badge gp-badge-estimate" style="font-size:10px;">Low CO2</span>
+          </div>
+          <div style="font-size:11.5px; color:var(--gp-text-secondary); margin-top:4px;">3 EV-optimized sites, 4,500 cap, 15 km radius. Internalizes carbon penalties.</div>
+          <div style="font-family:var(--gp-font-family-mono); font-size:10.5px; color:#64748b; margin-top:8px;">p=3 • Cap: 4.5k • R_max: 15km</div>
+        </div>
+        <div class="gp-preset-choice-card" data-apply-preset="standard" style="border:1px solid var(--gp-border); border-radius:8px; padding:12px; cursor:pointer; background:#f8fafc;">
+          <div style="font-weight:700; font-size:13px; color:#475569; display:flex; justify-content:space-between;">
+            <span>🏙️ Bengaluru Standard</span>
+            <span class="gp-badge gp-badge-estimate" style="font-size:10px;">Default</span>
+          </div>
+          <div style="font-size:11.5px; color:var(--gp-text-secondary); margin-top:4px;">3 balanced sites, 4,000 cap, 25 km radius. Standard B2B benchmark.</div>
+          <div style="font-family:var(--gp-font-family-mono); font-size:10.5px; color:#64748b; margin-top:8px;">p=3 • Cap: 4k • R_max: 25km</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:var(--gp-space-2);">
+        <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnCancelPresetModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Notifications Modal -->
+  <div class="gp-modal-backdrop" id="notificationsModal">
+    <div class="gp-modal" style="padding:var(--gp-space-5); max-width:480px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--gp-space-3);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="gp-status-dot-emerald"></span>
+          <h3 style="font-size:15px; font-weight:700; color:var(--gp-text-primary);">System & Solver Health</h3>
+        </div>
+        <button class="gp-btn gp-btn-ghost gp-btn-sm" id="btnCloseNotificationsModal">&times;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:12.5px;">
+        <div style="background:#f8fafc; border:1px solid var(--gp-border); border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600;">CBC Exact MILP Solver</div>
+            <div style="font-size:11px; color:#64748b;">PuLP 2.9 Branch-and-Cut Engine</div>
+          </div>
+          <span class="gp-badge gp-badge-optimal">Online (0 errors)</span>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--gp-border); border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600;">Active Mesh Topology</div>
+            <div style="font-size:11px; color:#64748b;">Bengaluru 36 Delivery Zones</div>
+          </div>
+          <span class="gp-badge gp-badge-estimate">10,240 ord/day</span>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--gp-border); border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600;">Road Network Detour Proxy</div>
+            <div style="font-size:11px; color:#64748b;">1.35x Empirical Congestion Routing</div>
+          </div>
+          <span class="gp-badge gp-badge-estimate">OSRM Calibrated</span>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--gp-border); border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600;">Currency Engine</div>
+            <div style="font-size:11px; color:#64748b;">Canonical INR (FX 85.00 INR/USD)</div>
+          </div>
+          <span class="gp-badge gp-badge-estimate">Canonical Base</span>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:var(--gp-space-4);">
+        <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnOkNotificationsModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Profile Modal -->
+  <div class="gp-modal-backdrop" id="profileModal">
+    <div class="gp-modal" style="padding:var(--gp-space-5); max-width:440px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--gp-space-3);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="gp-avatar-circle" style="width:28px; height:28px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <h3 style="font-size:15px; font-weight:700; color:var(--gp-text-primary);">Operator Workspace Profile</h3>
+        </div>
+        <button class="gp-btn gp-btn-ghost gp-btn-sm" id="btnCloseProfileModal">&times;</button>
+      </div>
+      <div style="font-size:12.5px; color:var(--gp-text-secondary); line-height:1.5; margin-bottom:14px;">
+        <div><strong>Role:</strong> Lead Logistics Operations Architect</div>
+        <div><strong>Session ID:</strong> <span id="profileSessionId" style="font-family:var(--gp-font-family-mono); color:var(--gp-text-primary);">default</span></div>
+        <div><strong>Authorization:</strong> Full Network Topology Read/Write</div>
+        <div><strong>Solver Authority:</strong> CBC Mixed-Integer Linear Program</div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--gp-border); padding-top:12px;">
+        <button class="gp-btn gp-btn-secondary gp-btn-sm" id="btnProfileResetSession" style="color:var(--gp-danger); border-color:#fecaca;">Reset Session to Defaults</button>
+        <button class="gp-btn gp-btn-primary gp-btn-sm" id="btnOkProfileModal">Done</button>
       </div>
     </div>
   </div>
