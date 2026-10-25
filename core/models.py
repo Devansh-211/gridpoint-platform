@@ -61,6 +61,7 @@ class CFLPResult:
     weighted_strategic_travel_time: float  # order-weighted travel time (order*minutes)
     solve_time_seconds: float
     diagnostics: List[str] = field(default_factory=list)
+    fractional_assignments: Optional[Dict[str, Dict[str, float]]] = None
 
 
 @dataclass
