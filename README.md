@@ -47,6 +47,9 @@
 7. **Honest Routing Accuracy:**
    - Clear distinction between exact Mixed-Integer Linear Programming for warehouse location (PuLP/CBC) and heuristic vehicle routing (OR-Tools Guided Local Search metaheuristics).
 
+8. **Basemap Providers:**
+   - Basemap tiles are OSM/Esri public servers for demo use; set VITE_TILE_URL for a production tile provider.
+
 ---
 
 ## 1.2. What's New in v2.1 (Ranking Engine, Regret Quantification & Cadastral Verification)

@@ -1,8 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   BASEMAP_PROVIDERS,
   DEFAULT_BASEMAP_ID,
-  BasemapProvider,
 } from '../config/basemaps';
 
 describe('Basemap Configuration & Failover Specification', () => {
