@@ -10,11 +10,12 @@ export const RoutingStatusBadge: React.FC<RoutingStatusBadgeProps> = ({ matrixRe
   if (!matrixResult) {
     return (
       <div
-        className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600"
+        className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-xs"
         title="Routing status initializing..."
       >
-        <Compass className="h-3.5 w-3.5 animate-spin text-slate-400" />
-        <span>Routing Initializing...</span>
+        <Compass className="h-3.5 w-3.5 animate-spin text-slate-400 shrink-0" />
+        <span className="hidden sm:inline">Routing Initializing...</span>
+        <span className="inline sm:hidden">Routing...</span>
       </div>
     );
   }
@@ -28,8 +29,9 @@ export const RoutingStatusBadge: React.FC<RoutingStatusBadgeProps> = ({ matrixRe
         title={tooltipText}
         id="badgeRoutingStatus"
       >
-        <Navigation2 className="h-3.5 w-3.5 text-blue-600" />
-        <span>OSRM Live Street Network (Actual Driving km & ETA)</span>
+        <Navigation2 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+        <span className="hidden sm:inline">OSRM Live Street Network (Actual Driving km & ETA)</span>
+        <span className="inline sm:hidden">OSRM Live</span>
       </div>
     );
   }
@@ -41,8 +43,9 @@ export const RoutingStatusBadge: React.FC<RoutingStatusBadgeProps> = ({ matrixRe
         title={tooltipText}
         id="badgeRoutingStatus"
       >
-        <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
-        <span>Mixed: OSRM + {matrixResult.estimatedCount} estimated</span>
+        <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+        <span className="hidden sm:inline">Mixed: OSRM + {matrixResult.estimatedCount} estimated</span>
+        <span className="inline sm:hidden">Mixed ({matrixResult.estimatedCount})</span>
       </div>
     );
   }
@@ -53,8 +56,9 @@ export const RoutingStatusBadge: React.FC<RoutingStatusBadgeProps> = ({ matrixRe
       title={tooltipText}
       id="badgeRoutingStatus"
     >
-      <Compass className="h-3.5 w-3.5 text-slate-500" />
-      <span>Haversine Geodesic (offline fallback)</span>
+      <Compass className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+      <span className="hidden sm:inline">Haversine Geodesic (offline fallback)</span>
+      <span className="inline sm:hidden">Haversine</span>
     </div>
   );
 };

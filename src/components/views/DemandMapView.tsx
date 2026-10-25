@@ -471,6 +471,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
                 onMapClickAddLocation={isClickToAddActive ? onMapClickAddLocation : undefined}
                 currency={currency}
                 routingStatusBadge={routingStatusBadge}
+                radiusMaxKm={radiusMaxKm}
               />
             </div>
 

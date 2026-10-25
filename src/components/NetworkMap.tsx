@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { OptimizeResponse, SiteScoreItem, Currency } from '../types';
 import { formatMoney } from '../lib/currency';
 import { reverseGeocodePhoton, PhotonPlaceResult } from '../services/photonService';
 import { BASEMAP_PROVIDERS, BasemapType } from '../config/basemaps';
-import { Layers, Loader2, MapPin, X, AlertTriangle } from 'lucide-react';
+import { calculateRobustBounds, radiusKmToMeters } from '../lib/geoBounds';
+import { Layers, Loader2, MapPin, X, AlertTriangle, Maximize2, Crosshair } from 'lucide-react';
 
 interface NetworkMapProps {
   optimizeData: OptimizeResponse | null;
@@ -16,6 +20,9 @@ interface NetworkMapProps {
   onMapClickAddLocation?: (place: PhotonPlaceResult) => void;
   routingStatusBadge?: React.ReactNode;
   currency?: Currency;
+  radiusMaxKm?: number | null;
+  lastAddedPoint?: { lat: number; lng: number } | null;
+  datasetResetKey?: number | string;
 }
 
 const CLUSTER_COLORS = [
@@ -81,21 +88,49 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
   onMapClickAddLocation,
   routingStatusBadge,
   currency = 'INR',
+  radiusMaxKm,
+  lastAddedPoint,
+  datasetResetKey,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const allBoundsRef = useRef<[number, number][]>([]);
+  const robustBoundsRef = useRef<[number, number][]>([]);
+  const hasInitialFitRef = useRef<boolean>(false);
+  const prevResetKeyRef = useRef<number | string | undefined>(datasetResetKey);
+
   const layersRef = useRef<{
     warehouses: L.LayerGroup;
     candidates: L.LayerGroup;
     osmLanduse: L.LayerGroup;
-    zones: L.LayerGroup;
+    zones: L.MarkerClusterGroup;
     lines: L.LayerGroup;
     radii: L.LayerGroup;
   }>({
     warehouses: L.layerGroup(),
     candidates: L.layerGroup(),
     osmLanduse: L.layerGroup(),
-    zones: L.layerGroup(),
+    zones: L.markerClusterGroup({
+      disableClusteringAtZoom: 11,
+      zoomToBoundsOnClick: true,
+      maxClusterRadius: 40,
+      iconCreateFunction: (cluster) => {
+        const count = cluster.getChildCount();
+        const markers = cluster.getAllChildMarkers();
+        let totalOrders = 0;
+        for (const m of markers) {
+          totalOrders += (m as any).zoneOrders || 0;
+        }
+        return L.divIcon({
+          html: `<div class="flex flex-col items-center justify-center rounded-full bg-blue-600 text-white font-bold shadow-md border-2 border-white w-12 h-12 text-center leading-tight cursor-pointer hover:bg-blue-700 transition">
+            <span class="text-[11px] leading-none">${count} zones</span>
+            <span class="text-[9px] font-medium opacity-90 leading-tight">${totalOrders.toLocaleString()} ord</span>
+          </div>`,
+          className: 'custom-zone-cluster',
+          iconSize: L.point(48, 48),
+        });
+      },
+    }),
     lines: L.layerGroup(),
     radii: L.layerGroup(),
   });
@@ -141,12 +176,39 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
     }
   }, []);
 
+  // Toolbar handlers for fitting views
+  const handleFitNetwork = useCallback(() => {
+    const map = mapInstanceRef.current;
+    if (!map || robustBoundsRef.current.length === 0) return;
+    map.invalidateSize();
+    map.fitBounds(robustBoundsRef.current, { padding: [48, 48], maxZoom: 12 });
+  }, []);
+
+  const handleShowAllPoints = useCallback(() => {
+    const map = mapInstanceRef.current;
+    if (!map || allBoundsRef.current.length === 0) return;
+    map.invalidateSize();
+    map.fitBounds(allBoundsRef.current, { padding: [48, 48] });
+  }, []);
+
   // Auto-dismiss failover toast
   useEffect(() => {
     if (!toastMessage) return;
     const timer = setTimeout(() => setToastMessage(null), 4000);
     return () => clearTimeout(timer);
   }, [toastMessage]);
+
+  // When a point is added outside current bounds, pan to it without changing zoom
+  useEffect(() => {
+    if (!lastAddedPoint) return;
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const target = L.latLng(lastAddedPoint.lat, lastAddedPoint.lng);
+    const bounds = map.getBounds();
+    if (!bounds.contains(target)) {
+      map.panTo(target);
+    }
+  }, [lastAddedPoint]);
 
   // Map click handler for adding locations
   useEffect(() => {
@@ -187,6 +249,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
     const map = L.map(mapContainerRef.current, {
       center: [12.9716, 77.5946], // Bengaluru center
       zoom: 11,
+      maxZoom: 19,
       zoomControl: true,
     });
 
@@ -199,10 +262,19 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
 
     mapInstanceRef.current = map;
 
+    // ResizeObserver on the map container
+    let resizeObserver: ResizeObserver | null = null;
+    if (mapContainerRef.current && typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize();
+      });
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     // Invalidate size once container renders
     const invalidateTimer = setTimeout(() => {
       map.invalidateSize();
-    }, 250);
+    }, 200);
 
     const handleResize = () => {
       map.invalidateSize();
@@ -212,6 +284,9 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
     return () => {
       clearTimeout(invalidateTimer);
       window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       try {
         if (tileLayerRef.current) {
           tileLayerRef.current.remove();
@@ -308,22 +383,29 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
 
     const bounds: [number, number][] = [];
 
+    const activeRadiusKm =
+      typeof radiusMaxKm !== 'undefined'
+        ? radiusMaxKm
+        : optimizeData.assumptions?.radius_max_km;
+    const radiusMeters = radiusKmToMeters(activeRadiusKm);
+
     // Render open warehouses
     optimizeData.warehouses.forEach((w) => {
       const color = wColorMap[w.warehouse_id] || '#10B981';
       bounds.push([w.latitude, w.longitude]);
 
-      // Service Radius Ring
-      const radiusKm = optimizeData.assumptions?.radius_max_km ?? 25;
-      const radiusCircle = L.circle([w.latitude, w.longitude], {
-        radius: radiusKm * 1000,
-        color: color,
-        weight: 1.5,
-        dashArray: '4, 6',
-        fillColor: color,
-        fillOpacity: 0.04,
-      });
-      layersRef.current.radii.addLayer(radiusCircle);
+      // Service Radius Ring (only when SLA radius is active / radiusMeters !== null)
+      if (radiusMeters !== null) {
+        const radiusCircle = L.circle([w.latitude, w.longitude], {
+          radius: radiusMeters,
+          color: color,
+          weight: 1.5,
+          dashArray: '4, 6',
+          fillColor: color,
+          fillOpacity: 0.04,
+        });
+        layersRef.current.radii.addLayer(radiusCircle);
+      }
 
       // Warehouse Marker
       const wMarker = L.circleMarker([w.latitude, w.longitude], {
@@ -463,6 +545,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
         weight: 1.5,
         fillOpacity: 0.85,
       });
+      (zMarker as any).zoneOrders = a.daily_orders;
 
       zMarker.bindPopup(`
         <div style="font-family:sans-serif; font-size:12px; line-height:1.4;">
@@ -508,13 +591,38 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
       if (map.hasLayer(layersRef.current.lines)) map.removeLayer(layersRef.current.lines);
     }
 
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [30, 30] });
+    // Save bounds for toolbar actions
+    allBoundsRef.current = bounds;
+    const robust = calculateRobustBounds(bounds);
+    robustBoundsRef.current = robust;
+
+    // Initial and reset fit: fitBounds only on initial load or dataset reset, not on every edit/solve
+    if ((!hasInitialFitRef.current || prevResetKeyRef.current !== datasetResetKey) && robust.length > 0) {
+      hasInitialFitRef.current = true;
+      prevResetKeyRef.current = datasetResetKey;
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+          mapInstanceRef.current.fitBounds(robust, { padding: [48, 48], maxZoom: 12 });
+        }
+      }, 150);
     }
     } catch (err) {
       console.warn('NetworkMap layer update notice:', err);
     }
-  }, [optimizeData, candidates, selectedPlotId, showRadius, showLines, showFootprints, onSelectSite]);
+  }, [
+    optimizeData,
+    candidates,
+    selectedPlotId,
+    showRadius,
+    showLines,
+    showFootprints,
+    onSelectSite,
+    onSelectZone,
+    currency,
+    radiusMaxKm,
+    datasetResetKey,
+  ]);
 
   // Overpass OSM context query handler
   const fetchOsmLanduse = useCallback(async () => {
@@ -622,7 +730,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
 
   return (
     <div
-      className={`relative h-[480px] w-full overflow-hidden rounded-xl border border-gp-border bg-slate-100 shadow-sm ${
+      className={`relative h-[520px] min-h-[360px] w-full overflow-hidden rounded-xl border border-gp-border bg-slate-100 shadow-sm ${
         isAddClickActive ? 'cursor-crosshair' : ''
       }`}
     >
@@ -644,9 +752,9 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
         </div>
       )}
 
-      {/* Top-Left Routing Status Badge */}
+      {/* Top-Left Routing Status Badge (shifted to right of Leaflet zoom control at left: 64px) */}
       {routingStatusBadge && (
-        <div className="absolute top-3 left-3 z-[1000]">
+        <div className="absolute top-3 left-[64px] z-[1000]">
           {routingStatusBadge}
         </div>
       )}
@@ -667,10 +775,32 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
       )}
 
       {/* Map Controls Overlay */}
-      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5 rounded-lg border border-gp-border bg-white/95 p-2.5 text-xs shadow-md backdrop-blur max-w-[210px]">
+      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5 rounded-lg border border-gp-border bg-white/95 p-2.5 text-xs shadow-md backdrop-blur max-w-[220px]">
         <div className="flex items-center gap-1.5 font-bold text-gp-text-primary border-b border-gp-border pb-1 mb-1">
           <Layers className="h-3.5 w-3.5 text-gp-primary-500" />
           <span>Network & Site Layers</span>
+        </div>
+
+        {/* Fit Network & Show All Points Toolbar */}
+        <div className="flex items-center gap-1.5 border-b border-gp-border pb-1.5 mb-1">
+          <button
+            type="button"
+            onClick={handleFitNetwork}
+            className="flex-1 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[10.5px] font-semibold text-slate-700 hover:bg-slate-100 transition text-center flex items-center justify-center gap-1"
+            title="Fit view over core network (excluding outliers)"
+          >
+            <Maximize2 className="h-3 w-3 text-slate-500" />
+            <span>Fit network</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleShowAllPoints}
+            className="flex-1 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[10.5px] font-semibold text-slate-700 hover:bg-slate-100 transition text-center flex items-center justify-center gap-1"
+            title="Fit view over all network points including distant outliers"
+          >
+            <Crosshair className="h-3 w-3 text-slate-500" />
+            <span>Show all points</span>
+          </button>
         </div>
 
         {/* Basemap Layer Radio Group (Streets | Satellite) */}
@@ -732,7 +862,19 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
             onChange={(e) => setShowRadius(e.target.checked)}
             className="rounded text-gp-primary-500 accent-gp-primary-500"
           />
-          <span>Service Radii ({optimizeData?.assumptions?.radius_max_km ?? 25} km)</span>
+          <span>
+            {radiusKmToMeters(
+              typeof radiusMaxKm !== 'undefined'
+                ? radiusMaxKm
+                : optimizeData?.assumptions?.radius_max_km
+            ) !== null
+              ? `Service Radii (${
+                  typeof radiusMaxKm !== 'undefined'
+                    ? radiusMaxKm
+                    : optimizeData?.assumptions?.radius_max_km ?? 25
+                } km)`
+              : 'Service Radii (R_max off)'}
+          </span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer text-gp-text-secondary hover:text-gp-text-primary">
           <input
