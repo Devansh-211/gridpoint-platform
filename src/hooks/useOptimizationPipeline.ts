@@ -249,10 +249,12 @@ export function useOptimizationPipeline() {
         }
       }
 
+      const minP = Math.max(1, Math.ceil(totalSystemDemand / (currentHubs[0]?.capacity || 4000)));
+      const baselineP = Math.max(currentP, minP, output.openHubs.length);
       const baselineTransit = output.totalTransitCostInr * 1.45;
-      const baselineLease = 1 * fixedLeaseInr;
+      const baselineLease = baselineP * fixedLeaseInr;
       const baselineCombined = baselineTransit + baselineLease;
-      const monthlySavings = Math.max(0, (baselineCombined - output.combinedTotalCostInr) * 30);
+      const monthlySavings = Math.round((baselineCombined - output.combinedTotalCostInr) * 30);
 
       return {
         status: output.status,

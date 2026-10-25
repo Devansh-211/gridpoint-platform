@@ -18,8 +18,9 @@ export const BenchmarkComparison: React.FC<BenchmarkComparisonProps> = ({
 
   const sym = currencySymbol(currency);
 
+  const baselineP = optimizeData.warehouses.length;
   const baselineTransit = compareData?.baseline?.total_delivery_cost ?? (optimizeData.total_delivery_cost * 1.45);
-  const baselineLease = compareData?.baseline?.total_infrastructure_cost ?? (1 * (optimizeData.assumptions?.fixed_cost_per_warehouse ?? 15000));
+  const baselineLease = compareData?.baseline?.total_infrastructure_cost ?? (baselineP * (optimizeData.assumptions?.fixed_cost_per_warehouse ?? 15000));
   const baselineCombined = baselineTransit + baselineLease;
   const baselineDist = compareData?.baseline?.weighted_distance_km ?? (optimizeData.total_weighted_distance_km * 1.45);
   const baselineCO2 = compareData?.baseline?.estimated_co2_kg_per_day ?? (optimizeData.estimated_co2_kg_per_day * 1.45);
@@ -45,7 +46,9 @@ export const BenchmarkComparison: React.FC<BenchmarkComparisonProps> = ({
   const co2Delta = optCO2 - baselineCO2;
   const co2Pct = baselineCO2 > 0 ? (co2Delta / baselineCO2) * 100 : 0;
 
-  const monthlySavings = optimizeData.estimated_monthly_savings;
+  const monthlySavings = optimizeData.estimated_monthly_savings > 0
+    ? optimizeData.estimated_monthly_savings
+    : Math.max(0, Math.round((baselineCombined - optCombined) * 30));
 
   // Export CSV with dynamic currency in headers
   const handleExportCSV = () => {
