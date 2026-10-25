@@ -124,6 +124,51 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
     return optimizeData.assignments.find((a) => a.neighborhood_id === activeZone.id) || null;
   }, [optimizeData, activeZone]);
 
+  const assignedHub = useMemo(() => {
+    if (!activeAssignment) return null;
+    return hubs.find((h) => h.id === activeAssignment.warehouse_id) || null;
+  }, [activeAssignment, hubs]);
+
+  const pairMetrics = useMemo(() => {
+    if (!activeZone || !activeAssignment) return null;
+    const hubId = activeAssignment.warehouse_id;
+    const zoneId = activeZone.id;
+
+    // Check if this pair used live OSRM
+    const isOsrm =
+      matrixResult?.pairSource?.[`${hubId}:${zoneId}`] === 'osrm' ||
+      matrixResult?.pairSource?.[`${zoneId}:${hubId}`] === 'osrm' ||
+      matrixResult?.status === 'all_road';
+
+    const roadDistKm =
+      matrixResult?.distancesKm?.[hubId]?.[zoneId] ??
+      matrixResult?.distancesKm?.[zoneId]?.[hubId] ??
+      (isOsrm ? activeAssignment.distance_km : null);
+
+    const durationMin =
+      matrixResult?.durationsMin?.[hubId]?.[zoneId] ??
+      matrixResult?.durationsMin?.[zoneId]?.[hubId] ??
+      (roadDistKm ? Math.max(1, Math.round((roadDistKm / 28.0) * 60)) : null);
+
+    let haversineDistKm = activeAssignment.distance_km;
+    if (assignedHub) {
+      haversineDistKm = haversineKm(assignedHub.lat, assignedHub.lng, activeZone.lat, activeZone.lng);
+    }
+
+    let roadFactor = 1.34;
+    if (roadDistKm && haversineDistKm > 0.05) {
+      roadFactor = Math.round((roadDistKm / haversineDistKm) * 100) / 100;
+    }
+
+    return {
+      isOsrm,
+      roadDistKm: roadDistKm ?? (haversineDistKm * 1.34),
+      haversineDistKm,
+      roadFactor,
+      durationMin: durationMin ?? Math.max(1, Math.round(((haversineDistKm * 1.34) / 28.0) * 60)),
+    };
+  }, [activeZone, activeAssignment, matrixResult, assignedHub]);
+
   // Total Demand & Trends
   const totalDemand = useMemo(() => {
     return zones.reduce((sum, z) => sum + getEffectiveOrders(z), 0);
@@ -230,7 +275,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
   }, [activeZone, targetPinHubId, hubs, activeAssignment, matrixResult, deliveryCostInr, optimizeData]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 max-w-full overflow-x-hidden">
       {/* 1. Page Header Row */}
       <PageHeader
         breadcrumbs={[
@@ -437,10 +482,10 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
         </div>
 
         {/* 4. Center Grid: Interactive Map + Zone Inspector */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start min-w-0">
           {/* Left: Map Container (2 Columns) */}
           <div
-            className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs relative isolate z-0"
+            className="lg:col-span-2 min-w-0 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs relative isolate z-0"
             style={{ position: 'relative', isolation: 'isolate', zIndex: 0 }}
           >
             {/* Top Toolbar Overlay on Map */}
@@ -514,7 +559,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
           </div>
 
           {/* Right: Zone Inspector Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 min-w-0">
             {/* Inspector Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -529,11 +574,11 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
             </div>
 
             {/* Zone Identity */}
-            <div>
-              <h2 className="text-base font-bold text-slate-900 truncate">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-slate-900 break-words">
                 {activeZone ? activeZone.name : 'No Zone Selected'}
               </h2>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed break-words">
                 {activeZone
                   ? `Demand zone at ${activeZone.lat.toFixed(4)}° N, ${activeZone.lng.toFixed(4)}° E with ${getEffectiveOrders(activeZone).toLocaleString()} daily orders.${activeAssignment?.warehouse_name ? ` Served by strategic depot ${activeAssignment.warehouse_name}.` : ' Standby status.'}`
                   : 'Select a delivery zone from the table or map to inspect catchment metrics.'}
@@ -543,9 +588,9 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
             {/* Metrics Breakdown Grid */}
             <div className="space-y-2.5 text-xs border-y border-slate-100 py-3">
               {/* Daily Demand with inline adjustment */}
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Daily Demand:</span>
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="text-slate-500 shrink-0">Daily Demand:</span>
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -558,7 +603,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
                   >
                     -
                   </button>
-                  <span className="font-bold text-slate-900 tabular-nums">
+                  <span className="font-bold text-slate-900 tabular-nums text-right">
                     {activeZone ? `${getEffectiveOrders(activeZone).toLocaleString()} ord/day` : '0 ord/day'}
                   </span>
                   <button
@@ -577,34 +622,53 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
               </div>
 
               {/* Assigned Hub */}
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Assigned Hub:</span>
-                <span className="font-semibold text-blue-600 truncate max-w-[160px]">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="text-slate-500 shrink-0">Assigned Hub:</span>
+                <span className="font-semibold text-blue-600 text-right truncate">
                   {activeAssignment?.warehouse_name || 'Unassigned'}
                 </span>
               </div>
 
-              {/* Haversine Distance */}
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Haversine Distance:</span>
-                <span className="font-semibold text-slate-700 tabular-nums whitespace-nowrap">
-                  {activeAssignment ? `${activeAssignment.distance_km.toFixed(1)} km` : '—'}
-                </span>
-              </div>
+              {/* Dynamic Distance Source & Detour Factor Rows */}
+              {pairMetrics?.isOsrm ? (
+                <>
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-slate-500 shrink-0">Road distance (OSRM):</span>
+                    <span className="font-semibold text-slate-900 tabular-nums text-right break-words">
+                      {pairMetrics.roadDistKm.toFixed(1)} km ({pairMetrics.durationMin} min ETA)
+                    </span>
+                  </div>
 
-              {/* Road Detour Factor */}
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Road Detour Factor:</span>
-                <span className="font-semibold text-slate-700 tabular-nums whitespace-nowrap">
-                  {activeAssignment ? `1.34x (${(activeAssignment.distance_km * 1.34).toFixed(1)} km road)` : '—'}
-                </span>
-              </div>
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-slate-500 shrink-0">Road factor:</span>
+                    <span className="font-semibold text-slate-900 tabular-nums text-right break-words">
+                      {pairMetrics.roadFactor.toFixed(2)}x vs Haversine
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-slate-500 shrink-0">Haversine distance:</span>
+                    <span className="font-semibold text-slate-900 tabular-nums text-right break-words">
+                      {pairMetrics ? `${pairMetrics.haversineDistKm.toFixed(1)} km` : activeAssignment ? `${activeAssignment.distance_km.toFixed(1)} km` : '—'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-slate-500 shrink-0">Detour factor (estimated):</span>
+                    <span className="font-semibold text-slate-900 tabular-nums text-right break-words">
+                      {pairMetrics ? `1.34x (${(pairMetrics.haversineDistKm * 1.34).toFixed(1)} km road, ~${pairMetrics.durationMin} min ETA)` : '—'}
+                    </span>
+                  </div>
+                </>
+              )}
 
               {/* Gravitational Pull */}
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Gravitational Pull:</span>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="text-slate-500 shrink-0">Gravitational Pull:</span>
                 <span
-                  className={`rounded px-1.5 py-0.5 text-[10.5px] font-bold ${
+                  className={`rounded px-1.5 py-0.5 text-[10.5px] font-bold text-right shrink-0 ${
                     gravityMetric.label === 'High'
                       ? 'bg-rose-50 text-rose-700'
                       : gravityMetric.label === 'Medium'
@@ -618,10 +682,12 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
             </div>
 
             {/* Modelled Intraday Profile (Assumption) */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-slate-600">INTRADAY PROFILE</span>
-                <span className="text-slate-400 font-medium whitespace-nowrap">Modelled profile (assumption) • Peak @ {PEAK_HOUR_LABEL}</span>
+            <div className="space-y-2 pt-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] gap-1 min-w-0">
+                <span className="font-semibold text-slate-600 shrink-0">INTRADAY PROFILE</span>
+                <span className="text-slate-400 font-medium break-words text-left sm:text-right">
+                  Modelled profile (assumption) • Peak @ {PEAK_HOUR_LABEL}
+                </span>
               </div>
               <div className="h-16 flex items-end gap-1 pt-2">
                 {hourlyData.map((b, i) => (
