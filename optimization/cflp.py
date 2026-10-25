@@ -20,35 +20,33 @@ class SolverUnavailableError(RuntimeError):
 
 def get_milp_solver(time_limit_sec: int = 60, msg: int = 0) -> pulp.LpSolver:
     """Detects and returns available CBC/COIN solver interface.
-
-    In modern PuLP versions, COIN_CMD is the standard interface for the CBC binary.
+    
+    Ensures temporary solver files are written to system temp directory (or /tmp on serverless)
+    and cleaned up upon completion.
     """
-    # 1. Resolve CBC binary path if installed via cbcbox or local solverdir
-    cbc_path = None
+    import os
+    import tempfile
+    os.environ.setdefault("TMPDIR", tempfile.gettempdir())
+
+    # 1. Try native PULP_CBC_CMD with explicit keepFiles=False
     try:
-        legacy_cmd = pulp.PULP_CBC_CMD()
-        if legacy_cmd.path and legacy_cmd.available():
-            cbc_path = legacy_cmd.path
+        if hasattr(pulp, "PULP_CBC_CMD"):
+            solver = pulp.PULP_CBC_CMD(timeLimit=time_limit_sec, msg=msg, keepFiles=False)
+            if solver.available():
+                return solver
     except Exception:
         pass
 
-    # 2. Try COIN_CMD (with explicit path or PATH discovery)
+    # 2. Try COIN_CMD
     try:
-        solver = pulp.COIN_CMD(path=cbc_path, msg=msg, timeLimit=time_limit_sec)
-        if solver.available():
-            return solver
+        if hasattr(pulp, "COIN_CMD"):
+            solver = pulp.COIN_CMD(timeLimit=time_limit_sec, msg=msg, keepFiles=False)
+            if solver.available():
+                return solver
     except Exception:
         pass
 
-    # 3. Try default COIN_CMD without explicit path
-    try:
-        solver = pulp.COIN_CMD(msg=msg, timeLimit=time_limit_sec)
-        if solver.available():
-            return solver
-    except Exception:
-        pass
-
-    # 4. Try default PULP solver
+    # 3. Try default PULP solver
     try:
         default_solver = pulp.LpSolverDefault
         if default_solver is not None and default_solver.available():
@@ -56,19 +54,17 @@ def get_milp_solver(time_limit_sec: int = 60, msg: int = 0) -> pulp.LpSolver:
     except Exception:
         pass
 
-    # 5. Check any available solver in listSolvers
-    avail = pulp.listSolvers(onlyAvailable=True)
-    if avail:
-        solver_name = avail[0]
-        try:
-            return pulp.getSolver(solver_name, timeLimit=time_limit_sec, msg=msg)
-        except Exception:
-            pass
+    # 4. Check listSolvers
+    try:
+        avail = pulp.listSolvers(onlyAvailable=True)
+        if avail:
+            return pulp.getSolver(avail[0], timeLimit=time_limit_sec, msg=msg)
+    except Exception:
+        pass
 
     raise SolverUnavailableError(
-        "No CBC MILP solver detected. Please install CBC support using:\n"
-        "    pip install \"pulp[cbc]\"\n"
-        "or ensure the 'cbc' binary is installed and present in your system PATH."
+        "No CBC MILP solver detected. Please ensure PuLP is installed with CBC support "
+        "(e.g. pulp>=2.8.0,<3.0.0 or system cbc binary)."
     )
 
 
@@ -132,6 +128,9 @@ def solve_cflp_heuristic(
     p_max: Optional[int] = None,
     cost_per_km: float = 1.25,
     fixed_cost_per_warehouse: float = 300.0,
+    assignment_mode: str = "single",
+    candidate_leases: Optional[Dict[str, float]] = None,
+    cost_scaling: str = "order_km",
 ) -> CFLPResult:
     """Greedy + 2-Opt Local Search Heuristic for Capacitated Facility Location.
     
@@ -143,6 +142,13 @@ def solve_cflp_heuristic(
     capacities = {c.id: float(c.capacity) for c in candidates}
     candidate_ids = [c.id for c in candidates]
     total_demand = sum(demands.values())
+    if cost_scaling == "order_km":
+        unit_transit_cost = cost_per_km
+    elif cost_scaling in ("legacy", "batch_50"):
+        unit_transit_cost = cost_per_km / 50.0
+    else:
+        unit_transit_cost = cost_per_km / 50.0 if cost_per_km < 5.0 else cost_per_km
+    lease_map = candidate_leases or {j: fixed_cost_per_warehouse for j in candidate_ids}
 
     if not candidate_ids:
         return CFLPResult(
@@ -176,11 +182,16 @@ def solve_cflp_heuristic(
                 duration_matrix_min=duration_matrix_min,
                 t_max_minutes=t_max_minutes,
                 auto_size=False,
+                cost_per_km=cost_per_km,
+                fixed_cost_per_warehouse=fixed_cost_per_warehouse,
+                assignment_mode=assignment_mode,
+                candidate_leases=candidate_leases,
+                cost_scaling=cost_scaling,
             )
 
             if k_res.status.startswith("Feasible") or k_res.is_optimal:
-                deliv_cost = k_res.weighted_strategic_travel_time * (cost_per_km / 50.0)
-                infra_cost = len(k_res.open_warehouse_ids) * fixed_cost_per_warehouse
+                deliv_cost = k_res.weighted_strategic_travel_time * unit_transit_cost
+                infra_cost = sum(lease_map.get(wid, fixed_cost_per_warehouse) for wid in k_res.open_warehouse_ids)
                 total_cost = deliv_cost + infra_cost
 
                 if total_cost < best_overall_cost:
@@ -286,13 +297,22 @@ def solve_cflp(
     p_max: Optional[int] = None,
     cost_per_km: float = 1.25,
     fixed_cost_per_warehouse: float = 300.0,
+    assignment_mode: str = "single",
+    candidate_leases: Optional[Dict[str, float]] = None,
+    cost_scaling: str = "auto",
 ) -> CFLPResult:
     """Solves the Capacitated Facility Location Problem (CFLP).
 
+    Canonical Objective:
+        Total Daily Cost (INR/day) = sum_{j in Open} lease_j + sum_{i, j} cost_per_km * road_km_ji * orders_i * x_ij
+
     Supports:
-      - Manual mode (auto_size=False): Enforces exact p warehouses open (Σ y_j = p).
+      - Manual mode (auto_size=False): Enforces exact p warehouses open (sum y_j = p).
       - Auto-size mode (auto_size=True): Treats warehouse count as an optimal decision variable,
         minimizing Total Cost = Delivery Transit Cost + Fixed Facility Lease Cost, bounded by p_max.
+      - Assignment mode:
+          - "single": Binary assignment (x_ij in {0, 1}), each customer zone served by exactly one warehouse.
+          - "split": Fractional continuous assignment (x_ij in [0, 1]), matching transportation LP / min-cost flow.
     
     If CBC MILP solver is not available, gracefully uses the greedy + local search heuristic.
     """
@@ -301,6 +321,13 @@ def solve_cflp(
     capacities = {c.id: float(c.capacity) for c in candidates}
     neighborhood_ids = [n.id for n in neighborhoods]
     candidate_ids = [c.id for c in candidates]
+    if cost_scaling == "order_km":
+        unit_transit_cost = cost_per_km
+    elif cost_scaling in ("legacy", "batch_50"):
+        unit_transit_cost = cost_per_km / 50.0
+    else:
+        unit_transit_cost = cost_per_km / 50.0 if cost_per_km < 5.0 else cost_per_km
+    lease_map = candidate_leases or {j: getattr(c, "daily_lease_inr", None) or fixed_cost_per_warehouse for j, c in zip(candidate_ids, candidates)}
 
     # Bound p_max in auto-size mode
     effective_p = p_warehouses
@@ -347,8 +374,10 @@ def solve_cflp(
             p_max=p_max,
             cost_per_km=cost_per_km,
             fixed_cost_per_warehouse=fixed_cost_per_warehouse,
+            assignment_mode=assignment_mode,
+            candidate_leases=lease_map,
+            cost_scaling=cost_scaling,
         )
-
 
     # Initialize PuLP MILP Model
     prob = pulp.LpProblem("GRIDPOINT_CFLP", pulp.LpMinimize)
@@ -359,32 +388,27 @@ def solve_cflp(
         for j in candidate_ids
     }
 
-    # Decision variable x[i, j]: 1 if neighborhood i assigned to warehouse j, 0 otherwise
+    # Decision variable x[i, j]: fraction of demand from zone i served by warehouse j
+    cat_x = pulp.LpContinuous if assignment_mode == "split" else pulp.LpBinary
     x = {}
     valid_pairs = []
     for i in neighborhood_ids:
         for j in candidate_ids:
             travel_time = duration_matrix_min.get(j, {}).get(i, 9999.0)
             if t_max_minutes is None or travel_time <= t_max_minutes:
-                x[(i, j)] = pulp.LpVariable(f"x_{i}_{j}", cat=pulp.LpBinary)
+                x[(i, j)] = pulp.LpVariable(f"x_{i}_{j}", lowBound=0.0, upBound=1.0, cat=cat_x)
                 valid_pairs.append((i, j))
 
-    # Objective: Minimize Total Cost (in Auto-size mode) or Weighted Travel Distance (in Manual mode)
-    if auto_size:
-        prob += (
-            pulp.lpSum(
-                demands[i] * duration_matrix_min[j][i] * (cost_per_km / 50.0) * x[(i, j)]
-                for (i, j) in valid_pairs
-            )
-            + pulp.lpSum(fixed_cost_per_warehouse * y[j] for j in candidate_ids)
-        )
-    else:
-        prob += pulp.lpSum(
-            demands[i] * duration_matrix_min[j][i] * x[(i, j)]
+    # Objective: Minimize Total Cost = Delivery Transit Cost + Fixed Facility Lease Cost
+    prob += (
+        pulp.lpSum(
+            demands[i] * duration_matrix_min[j][i] * unit_transit_cost * x[(i, j)]
             for (i, j) in valid_pairs
         )
+        + pulp.lpSum(lease_map.get(j, fixed_cost_per_warehouse) * y[j] for j in candidate_ids)
+    )
 
-    # Constraint 1: Every neighborhood assigned to exactly one warehouse
+    # Constraint 1: Every neighborhood demand fully assigned
     for i in neighborhood_ids:
         allowed_cands = [j for j in candidate_ids if (i, j) in x]
         if not allowed_cands:
@@ -398,7 +422,7 @@ def solve_cflp(
                 solve_time_seconds=time.time() - start_time,
                 diagnostics=[f"Delivery zone {i} cannot be served within max radius = {t_max_minutes} km."],
             )
-        prob += pulp.lpSum(x[(i, j)] for j in allowed_cands) == 1, f"Assign_Once_{i}"
+        prob += pulp.lpSum(x[(i, j)] for j in allowed_cands) == 1.0, f"Assign_Once_{i}"
 
     # Constraint 2: Assignment only to open warehouses (x[i,j] <= y[j])
     for (i, j) in valid_pairs:
@@ -414,13 +438,13 @@ def solve_cflp(
 
     # Constraint 4: Warehouse Count Constraint
     if auto_size:
-        # In Auto-size mode: Drop exact equality constraint!
+        # In Auto-size mode: Drop exact equality constraint, require at least 1 up to effective_p
         prob += pulp.lpSum(y[j] for j in candidate_ids) >= 1, "At_Least_One_Warehouse"
         if effective_p is not None and effective_p < len(candidate_ids):
             prob += pulp.lpSum(y[j] for j in candidate_ids) <= effective_p, f"Max_{effective_p}_Warehouses"
     else:
         # In Manual mode: Enforce exact p warehouses open
-        prob += pulp.lpSum(y[j] for j in candidate_ids) == p_warehouses, "Exact_P_Warehouses"
+        prob += pulp.lpSum(y[j] for j in candidate_ids) == float(p_warehouses), "Exact_P_Warehouses"
 
     # Solve using CBC
     try:
@@ -437,6 +461,9 @@ def solve_cflp(
             p_max=p_max,
             cost_per_km=cost_per_km,
             fixed_cost_per_warehouse=fixed_cost_per_warehouse,
+            assignment_mode=assignment_mode,
+            candidate_leases=lease_map,
+            cost_scaling=cost_scaling,
         )
 
     elapsed = time.time() - start_time
@@ -466,15 +493,30 @@ def solve_cflp(
     # Extract open warehouses and assignments
     open_warehouses = [j for j in candidate_ids if pulp.value(y[j]) is not None and pulp.value(y[j]) > 0.5]
     assignments: Dict[str, str] = {}
-    for (i, j) in valid_pairs:
-        if pulp.value(x[(i, j)]) is not None and pulp.value(x[(i, j)]) > 0.5:
-            assignments[i] = j
+    fractional_assignments: Dict[str, Dict[str, float]] = {}
 
-    # Always compute raw total order-km distance
+    for i in neighborhood_ids:
+        fractional_assignments[i] = {}
+        best_wid = None
+        best_val = -1.0
+        for j in candidate_ids:
+            if (i, j) in valid_pairs:
+                val = pulp.value(x[(i, j)])
+                if val is not None and val > 1e-5:
+                    val_f = float(val)
+                    fractional_assignments[i][j] = round(val_f, 4)
+                    if val_f > best_val:
+                        best_val = val_f
+                        best_wid = j
+        if best_wid:
+            assignments[i] = best_wid
+
+    # Compute raw total order-km distance
     raw_weighted_distance = sum(
-        demands[i] * duration_matrix_min.get(assignments[i], {}).get(i, 0.0)
+        demands[i] * duration_matrix_min.get(j, {}).get(i, 0.0) * fractional_assignments.get(i, {}).get(j, 0.0)
         for i in neighborhood_ids
-        if i in assignments
+        for j in candidate_ids
+        if (i, j) in valid_pairs
     )
 
     if auto_size:
@@ -489,5 +531,6 @@ def solve_cflp(
         weighted_strategic_travel_time=raw_weighted_distance,
         solve_time_seconds=elapsed,
         diagnostics=[],
+        fractional_assignments=fractional_assignments if assignment_mode == "split" else None,
     )
 
