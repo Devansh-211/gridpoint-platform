@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sidebar, AppRoute } from './Sidebar';
 import { Header, TelemetryEvent } from './Header';
+import { MobileBottomNav } from './MobileBottomNav';
 import { Currency } from '../../types';
 
 interface AppShellProps {
@@ -86,9 +87,16 @@ export const AppShell: React.FC<AppShellProps> = ({
         />
 
         {/* Scrollable Main Region (Never cut off mid-page, no bottom background gap) */}
-        <main className="flex-1 pb-16">
+        <main className="flex-1 pb-24 md:pb-16 overflow-x-hidden">
           {children}
         </main>
+
+        {/* Mobile Phone Bottom Navigation Bar */}
+        <MobileBottomNav
+          currentRoute={currentRoute}
+          onRouteChange={onRouteChange}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        />
       </div>
 
       {/* Settings Modal */}

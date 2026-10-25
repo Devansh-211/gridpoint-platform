@@ -121,8 +121,8 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-2 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-3 py-1.5 text-xs font-semibold text-[#1E40AF] hover:bg-[#DBEAFE] transition whitespace-nowrap min-w-0"
           >
             <Database className="h-3.5 w-3.5 text-[#2563EB] shrink-0" />
-            <span className="truncate max-w-[140px] sm:max-w-[200px]">{datasetName}</span>
-            <span className="text-[11px] text-[#3B82F6] font-normal shrink-0">
+            <span className="truncate max-w-[90px] xs:max-w-[140px] sm:max-w-[200px]">{datasetName}</span>
+            <span className="hidden sm:inline text-[11px] text-[#3B82F6] font-normal shrink-0">
               • {zoneCount} Zones / {candidateCount} Hubs
             </span>
           </button>
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Currency Toggle, Load Preset, Run Optimizer, Bell, Avatar */}
-      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Logistics Assistant Trigger */}
         <button
           type="button"
@@ -213,28 +213,32 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             role="radio"
+            aria-label="₹ INR"
             aria-checked={currency === 'INR'}
             onClick={() => onCurrencyChange('INR')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+            className={`px-2 sm:px-2.5 py-1 text-xs font-bold rounded-md transition ${
               currency === 'INR'
                 ? 'bg-white text-blue-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            ₹ INR
+            <span className="hidden sm:inline">₹ INR</span>
+            <span className="sm:hidden">₹</span>
           </button>
           <button
             type="button"
             role="radio"
+            aria-label="$ USD"
             aria-checked={currency === 'USD'}
             onClick={() => onCurrencyChange('USD')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+            className={`px-2 sm:px-2.5 py-1 text-xs font-bold rounded-md transition ${
               currency === 'USD'
                 ? 'bg-white text-blue-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            $ USD
+            <span className="hidden sm:inline">$ USD</span>
+            <span className="sm:hidden">$</span>
           </button>
         </div>
 
@@ -248,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({
               setIsEventsOpen(false);
               setIsAvatarOpen(false);
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs whitespace-nowrap"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs whitespace-nowrap"
           >
             <Layers className="h-3.5 w-3.5 text-slate-500" />
             <span className="hidden sm:inline">Load Preset</span>
@@ -282,7 +286,8 @@ export const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onRunOptimizer}
           disabled={isSolving}
-          className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-bold text-white transition shadow-sm whitespace-nowrap ${
+          aria-label={isSolving ? 'Solving optimization' : 'Run Optimizer'}
+          className={`flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-4 py-1.5 text-xs font-bold text-white transition shadow-sm whitespace-nowrap ${
             isSolving
               ? 'bg-blue-400 cursor-not-allowed'
               : 'bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.98]'
@@ -291,12 +296,13 @@ export const Header: React.FC<HeaderProps> = ({
           {isSolving ? (
             <>
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              <span>Solving...</span>
+              <span className="hidden sm:inline">Solving...</span>
             </>
           ) : (
             <>
               <Play className="h-3.5 w-3.5 fill-current" />
-              <span>Run Optimizer</span>
+              <span className="hidden sm:inline">Run Optimizer</span>
+              <span className="sm:hidden font-bold">Run</span>
             </>
           )}
         </button>

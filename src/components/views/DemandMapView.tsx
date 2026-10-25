@@ -510,7 +510,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
             style={{ position: 'relative', isolation: 'isolate', zIndex: 0 }}
           >
             {/* Top Toolbar Overlay on Map */}
-            <div className={`absolute top-3 left-3 ${Z_CLASSES.mapOverlays} flex items-center gap-2 rounded-lg bg-white/90 backdrop-blur-xs px-3 py-1.5 border border-slate-200 text-[11px] font-mono text-slate-700 shadow-xs`}>
+            <div className={`absolute top-3 left-3 ${Z_CLASSES.mapOverlays} hidden sm:flex items-center gap-2 rounded-lg bg-white/90 backdrop-blur-xs px-3 py-1.5 border border-slate-200 text-[11px] font-mono text-slate-700 shadow-xs`}>
               <span className="font-semibold text-blue-700 whitespace-nowrap">
                 {mapCenter.lat.toFixed(4)}° N, {mapCenter.lng.toFixed(4)}° E
               </span>
@@ -535,7 +535,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
               </button>
             </div>
 
-            <div className="h-[520px] w-full">
+            <div className="h-[360px] sm:h-[440px] md:h-[520px] w-full">
               <NetworkMap
                 optimizeData={optimizeData}
                 candidates={candidates || []}
