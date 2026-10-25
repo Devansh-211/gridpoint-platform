@@ -1,5 +1,5 @@
 """GRIDPOINT — Warehouse Location Optimization Platform.
-FastAPI Application Entrypoint (Hack-A-Matics 2026).
+FastAPI Application Entrypoint.
 """
 
 import logging

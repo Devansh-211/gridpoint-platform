@@ -1,5 +1,5 @@
 # GRIDPOINT — Intelligent Warehouse Location & Delivery Network Optimizer
-### Hack-A-Matics 2026 Prototype — Operations-Research Logistics Decision Support Tool
+### Operations-Research Logistics Decision Support Tool
 
 **GRIDPOINT** is a B2B logistics decision-support tool designed for operations and supply chain managers at quick-commerce and e-commerce enterprises. Rather than relying on intuition or manual guesswork, GRIDPOINT applies mathematical optimization to determine **where warehouses should go, how many to open, which delivery zones each facility should serve, and quantifies the exact cost and distance improvements over a reference baseline**.
 
