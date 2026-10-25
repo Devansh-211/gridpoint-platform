@@ -533,9 +533,11 @@ export function useOptimizationPipeline() {
         setOptimizeData(optResp);
         setIsStale(false);
 
-        // Baseline comparison: 1-Median single warehouse baseline
-        const baselineTransit = output.totalTransitCostInr * 1.45;
-        const baselineLease = 1 * fixedLeaseInr;
+        // Baseline comparison: Reference baseline scaled to capacity-required p
+        const minPRequired = Math.max(1, Math.ceil(totalDemand / warehouseCapacity));
+        const baselineP = Math.max(resolvedP, minPRequired);
+        const baselineTransit = Math.round(output.totalTransitCostInr * 1.45 * 100) / 100;
+        const baselineLease = baselineP * fixedLeaseInr;
         const baselineCombined = baselineTransit + baselineLease;
         const costDelta = output.combinedTotalCostInr - baselineCombined;
         const distDelta = output.totalWeightedDistanceKm - output.totalWeightedDistanceKm * 1.45;
@@ -561,7 +563,9 @@ export function useOptimizationPipeline() {
           deliveryCostInr,
           radiusMaxKm,
           effectiveDistances,
-          matrix.durationsMin
+          matrix.durationsMin,
+          output.totalTransitCostInr,
+          output.totalWeightedDistanceKm
         );
 
         setCompareData({

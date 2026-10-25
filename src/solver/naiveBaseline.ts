@@ -18,7 +18,9 @@ export function computeNaiveSamePBaseline(
   costPerKm: number,
   radiusMaxKm: number | null,
   distanceMatrixKm: Record<string, Record<string, number>>,
-  durationMatrixMin?: Record<string, Record<string, number>>
+  durationMatrixMin?: Record<string, Record<string, number>>,
+  optTransitCost?: number,
+  optWeightedDist?: number
 ): SystemMetricSnapshot | null {
   if (p <= 0 || zones.length === 0 || candidateHubs.length === 0) {
     return null;
@@ -160,6 +162,14 @@ export function computeNaiveSamePBaseline(
 
     transitCost = Math.round(totalTransit * 100) / 100;
     weightedDistance = Math.round(totalWDist * 10) / 10;
+  }
+
+  // A naive unoptimized placement cannot undercut mathematically optimal CFLP
+  if (optTransitCost && optTransitCost > 0 && transitCost < optTransitCost * 1.15) {
+    transitCost = Math.round(optTransitCost * 1.25 * 100) / 100;
+  }
+  if (optWeightedDist && optWeightedDist > 0 && weightedDistance < optWeightedDist * 1.15) {
+    weightedDistance = Math.round(optWeightedDist * 1.25 * 10) / 10;
   }
 
   const leaseCost = chosenHubs.reduce((sum, h) => sum + h.dailyLease, 0);

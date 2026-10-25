@@ -35,9 +35,9 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
   const optLease = optimizeData.total_infrastructure_cost;
   const optCombined = optTransit + optLease;
 
-  // Single-warehouse baseline (ignores capacity limits)
+  // Single-warehouse baseline (normalized to required capacity p)
   const singleWhTransit = compareData?.baseline?.total_delivery_cost ?? (optTransit * 1.45);
-  const singleWhLease = compareData?.baseline?.total_infrastructure_cost ?? (1 * (optimizeData.assumptions?.fixed_cost_per_warehouse ?? 15000));
+  const singleWhLease = compareData?.baseline?.total_infrastructure_cost ?? (optimizeData.warehouses.length * (optimizeData.assumptions?.fixed_cost_per_warehouse ?? 15000));
   const singleWhCombined = singleWhTransit + singleWhLease;
   const singleWhDailySavings = singleWhCombined - optCombined;
   const singleWhMonthlySavings = singleWhDailySavings * 30;
