@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { OptimizeResponse, SiteScoreItem, Currency } from '../types';
 import { formatMoney } from '../lib/currency';
 import { reverseGeocodePhoton, PhotonPlaceResult } from '../services/photonService';
-import { Layers, Loader2, MapPin, X } from 'lucide-react';
+import { BASEMAP_PROVIDERS, BasemapType } from '../config/basemaps';
+import { Layers, Loader2, MapPin, X, AlertTriangle } from 'lucide-react';
 
 interface NetworkMapProps {
   optimizeData: OptimizeResponse | null;
@@ -107,6 +108,46 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
   const [osmStatusMsg, setOsmStatusMsg] = useState<string | null>(null);
   const [isAddClickActive, setIsAddClickActive] = useState<boolean>(false);
 
+  // Basemap switcher & failover state
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const tileErrorsRef = useRef<number[]>([]);
+  const [basemapType, setBasemapType] = useState<BasemapType>(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem('gridpoint_basemap_type');
+      if (saved === 'streets' || saved === 'satellite') return saved as BasemapType;
+    }
+    return 'streets';
+  });
+  const [providerIndex, setProviderIndex] = useState<number>(0);
+  const [isBasemapUnavailable, setIsBasemapUnavailable] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const candidateProviders = useMemo(() => {
+    return BASEMAP_PROVIDERS.filter((p) => p.type === basemapType);
+  }, [basemapType]);
+
+  const activeProvider = useMemo(() => {
+    if (isBasemapUnavailable) return null;
+    return candidateProviders[providerIndex] || candidateProviders[0] || null;
+  }, [candidateProviders, providerIndex, isBasemapUnavailable]);
+
+  const handleBasemapTypeChange = useCallback((type: BasemapType) => {
+    setBasemapType(type);
+    setProviderIndex(0);
+    setIsBasemapUnavailable(false);
+    tileErrorsRef.current = [];
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('gridpoint_basemap_type', type);
+    }
+  }, []);
+
+  // Auto-dismiss failover toast
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
   // Map click handler for adding locations
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -149,11 +190,6 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
       zoomControl: true,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(map);
-
     layersRef.current.osmLanduse.addTo(map);
     layersRef.current.radii.addTo(map);
     layersRef.current.lines.addTo(map);
@@ -177,6 +213,10 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
       clearTimeout(invalidateTimer);
       window.removeEventListener('resize', handleResize);
       try {
+        if (tileLayerRef.current) {
+          tileLayerRef.current.remove();
+          tileLayerRef.current = null;
+        }
         layersRef.current.warehouses.clearLayers();
         layersRef.current.candidates.clearLayers();
         layersRef.current.zones.clearLayers();
@@ -190,6 +230,64 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Dynamically mount/swap basemap tile layer with automatic failover
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (tileLayerRef.current) {
+      try {
+        map.removeLayer(tileLayerRef.current);
+      } catch {
+        // Safe cleanup
+      }
+      tileLayerRef.current = null;
+    }
+
+    if (!activeProvider || isBasemapUnavailable) {
+      return;
+    }
+
+    const tileLayer = L.tileLayer(activeProvider.url, {
+      attribution: activeProvider.attribution,
+      maxZoom: activeProvider.maxZoom,
+    });
+
+    tileLayer.on('tileerror', () => {
+      const now = Date.now();
+      tileErrorsRef.current = [...tileErrorsRef.current.filter((t) => now - t <= 10000), now];
+
+      if (tileErrorsRef.current.length >= 6) {
+        tileErrorsRef.current = [];
+        setProviderIndex((currIdx) => {
+          const nextIdx = currIdx + 1;
+          if (nextIdx < candidateProviders.length) {
+            const nextProv = candidateProviders[nextIdx];
+            setToastMessage(`Basemap switched to ${nextProv.name}`);
+            return nextIdx;
+          } else {
+            setIsBasemapUnavailable(true);
+            return currIdx;
+          }
+        });
+      }
+    });
+
+    tileLayer.addTo(map);
+    tileLayerRef.current = tileLayer;
+
+    return () => {
+      if (tileLayerRef.current && mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.removeLayer(tileLayerRef.current);
+        } catch {
+          // Safe disposal
+        }
+        tileLayerRef.current = null;
+      }
+    };
+  }, [activeProvider, isBasemapUnavailable, candidateProviders]);
 
   // Update map contents when optimizeData or candidates changes
   useEffect(() => {
@@ -553,11 +651,55 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
         </div>
       )}
 
+      {/* Failover Toast Notification */}
+      {toastMessage && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-lg bg-slate-900/90 text-white px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur animate-in fade-in duration-200">
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Basemap Unavailable Warning Chip */}
+      {isBasemapUnavailable && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-1 text-[11px] font-semibold text-slate-200 shadow-md">
+          <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 animate-pulse" />
+          <span>Basemap unavailable</span>
+        </div>
+      )}
+
       {/* Map Controls Overlay */}
       <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5 rounded-lg border border-gp-border bg-white/95 p-2.5 text-xs shadow-md backdrop-blur max-w-[210px]">
         <div className="flex items-center gap-1.5 font-bold text-gp-text-primary border-b border-gp-border pb-1 mb-1">
           <Layers className="h-3.5 w-3.5 text-gp-primary-500" />
           <span>Network & Site Layers</span>
+        </div>
+
+        {/* Basemap Layer Radio Group (Streets | Satellite) */}
+        <div className="border-b border-gp-border pb-1.5 mb-1">
+          <span className="block font-bold text-slate-700 text-[10.5px] uppercase tracking-wider mb-1">Basemap</span>
+          <div className="flex items-center gap-3 text-xs">
+            <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium hover:text-slate-900">
+              <input
+                type="radio"
+                name="basemap-layer-type"
+                value="streets"
+                checked={basemapType === 'streets'}
+                onChange={() => handleBasemapTypeChange('streets')}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span>Streets</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium hover:text-slate-900">
+              <input
+                type="radio"
+                name="basemap-layer-type"
+                value="satellite"
+                checked={basemapType === 'satellite'}
+                onChange={() => handleBasemapTypeChange('satellite')}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span>Satellite</span>
+            </label>
+          </div>
         </div>
 
         {/* Click Map to Add Toolbar Toggle */}

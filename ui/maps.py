@@ -40,7 +40,7 @@ def render_network_map(
     m = folium.Map(
         location=[center_lat, center_lon],
         zoom_start=11,
-        tiles="CartoDB positron",
+        tiles="OpenStreetMap",
         control_scale=True,
     )
 
