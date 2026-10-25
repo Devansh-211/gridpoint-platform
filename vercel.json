@@ -3,6 +3,11 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{src/**,tests/**,docs/**,scripts/**,static/**,ui/**,node_modules/**,*.md,*.ts,*.tsx,package-lock.json}"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",

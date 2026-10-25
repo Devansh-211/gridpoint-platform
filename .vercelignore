@@ -12,3 +12,7 @@ NOTES_AUDIT.md
 *.log
 .coverage
 htmlcov/
+docs/
+scripts/
+ui/
+*.md
