@@ -202,12 +202,13 @@ describe('BUG 5: Zone Inspector Layout & Distance Source Rows', () => {
       />
     );
 
-    // Assigned hub element is visible and right-aligned
-    const hubElement = screen.getByText('Central Bangalore Depot');
+    // Assigned depot element is visible and right-aligned
+    const hubElement = screen.getByTestId('inspector-assigned-depot');
+    expect(hubElement).toHaveTextContent('Central Bangalore Depot');
     expect(hubElement.className).toContain('text-right');
 
     // Values are right-aligned
-    const roadDistElement = screen.getByText(/7.4 km/);
+    const roadDistElement = screen.getByText(/7\.4 km \(16 min ETA\)/);
     expect(roadDistElement.className).toContain('text-right');
 
     // Grid container and card have min-w-0

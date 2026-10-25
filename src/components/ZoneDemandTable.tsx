@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { EditableZone, getEffectiveOrders } from '../lib/networkState';
-import { ZoneAssignmentResult } from '../solver/types';
-import { Currency } from '../types';
+import { EditableZone, EditableHub, getEffectiveOrders } from '../lib/networkState';
+import { ZoneAssignmentResult, AssignmentFraction } from '../solver/types';
+import { Currency, AssignmentItem } from '../types';
 import { OrderQuantityEditor } from './OrderQuantityEditor';
 import {
   Search,
@@ -22,7 +22,8 @@ export type ZoneSortField = 'name' | 'orders' | 'distance' | 'eta' | 'status' | 
 
 interface ZoneDemandTableProps {
   zones: EditableZone[];
-  assignments?: ZoneAssignmentResult[];
+  assignments?: (ZoneAssignmentResult | AssignmentItem)[];
+  hubs?: EditableHub[];
   onUpdateZoneDemand: (zoneId: string, baseOrders: number, multiplier: number) => void;
   onSelectZone: (zoneId: string) => void;
   onDeleteZone: (zoneId: string) => void;
@@ -35,6 +36,7 @@ interface ZoneDemandTableProps {
 export const ZoneDemandTable: React.FC<ZoneDemandTableProps> = ({
   zones,
   assignments = [],
+  hubs = [],
   onUpdateZoneDemand,
   onSelectZone,
   onDeleteZone,
@@ -59,14 +61,84 @@ export const ZoneDemandTable: React.FC<ZoneDemandTableProps> = ({
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Map zoneId -> assignment result
+  // Map zoneId -> assignment result, supporting both ZoneAssignmentResult and AssignmentItem
   const assignmentMap = useMemo(() => {
     const map = new Map<string, ZoneAssignmentResult>();
-    for (const a of assignments) {
-      map.set(a.zoneId, a);
+    if (!assignments || !Array.isArray(assignments)) return map;
+
+    for (const raw of assignments) {
+      if (!raw) continue;
+      // Format 1: Native ZoneAssignmentResult
+      if ('zoneId' in raw && Array.isArray((raw as ZoneAssignmentResult).hubAssignments)) {
+        const item = raw as ZoneAssignmentResult;
+        map.set(item.zoneId, item);
+      } else {
+        // Format 2: OptimizeResponse AssignmentItem
+        const item = raw as AssignmentItem;
+        const zId = item.neighborhood_id || (item as any).zoneId;
+        if (!zId) continue;
+
+        const isUncovered =
+          !item.warehouse_id ||
+          item.warehouse_id === 'UNASSIGNED' ||
+          item.warehouse_name?.toLowerCase().includes('unassigned') ||
+          item.distance_km >= 900;
+
+        const hubAssignment: AssignmentFraction = {
+          hubId: item.warehouse_id || '',
+          hubName: item.warehouse_name || 'Unassigned',
+          fraction: 1.0,
+          assignedDemand: item.daily_orders || 0,
+          distanceKm: item.distance_km || 0,
+          durationMin: Math.max(1, Math.round(((item.distance_km || 0) / 28.0) * 60)),
+        };
+
+        const existing = map.get(zId);
+        if (existing) {
+          if (!isUncovered) {
+            existing.hubAssignments.push(hubAssignment);
+            existing.isCovered = true;
+          }
+        } else {
+          map.set(zId, {
+            zoneId: zId,
+            zoneName: item.neighborhood_name || (item as any).zoneName || zId,
+            demand: item.daily_orders || 0,
+            isCovered: !isUncovered,
+            hubAssignments: isUncovered ? [] : [hubAssignment],
+          });
+        }
+      }
     }
+
+    // Overlay pinned assignments if hubs lookup is available
+    if (hubs && hubs.length > 0 && pinnedAssignments) {
+      const hubLookup = new Map(hubs.map((h) => [h.id, h]));
+      for (const [zId, hubId] of Object.entries(pinnedAssignments)) {
+        const hub = hubLookup.get(hubId);
+        if (hub) {
+          map.set(zId, {
+            zoneId: zId,
+            zoneName: zId,
+            demand: 0,
+            isCovered: true,
+            hubAssignments: [
+              {
+                hubId: hub.id,
+                hubName: hub.name,
+                fraction: 1.0,
+                assignedDemand: 0,
+                distanceKm: 0,
+                durationMin: 0,
+              },
+            ],
+          });
+        }
+      }
+    }
+
     return map;
-  }, [assignments]);
+  }, [assignments, hubs, pinnedAssignments]);
 
   // Aggregate statistics
   const totalOrders = useMemo(() => {
@@ -74,8 +146,8 @@ export const ZoneDemandTable: React.FC<ZoneDemandTableProps> = ({
   }, [zones]);
 
   const uncoveredCount = useMemo(() => {
-    return assignments.filter((a) => !a.isCovered).length;
-  }, [assignments]);
+    return Array.from(assignmentMap.values()).filter((a) => !a.isCovered).length;
+  }, [assignmentMap]);
 
   // Helper to compute zone status
   const getZoneStatus = (z: EditableZone) => {

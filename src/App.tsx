@@ -320,6 +320,7 @@ export const App: React.FC = () => {
             onClearExternalPlace={() => setExternalMapPlace(null)}
             radiusMaxKm={pipeline.radiusMaxKm}
             deliveryCostInr={pipeline.deliveryCostInr}
+            solverOutput={pipeline.solverOutput}
           />
         </ErrorBoundary>
       )}

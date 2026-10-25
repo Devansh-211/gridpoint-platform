@@ -11,6 +11,7 @@ import { OsrmMatrixResult, haversineKm } from '../../services/osrmMatrixService'
 import { calculateHourlyOrders, PEAK_HOUR_LABEL } from '../../lib/demandProfile';
 import { formatMoney } from '../../lib/currency';
 import { Z_CLASSES } from '../../config/zIndexTokens';
+import { SolverOutput } from '../../solver/types';
 import {
   MapPin,
   TrendingUp,
@@ -54,6 +55,7 @@ interface DemandMapViewProps {
   onClearExternalPlace?: () => void;
   radiusMaxKm?: number | null;
   deliveryCostInr?: number;
+  solverOutput?: SolverOutput | null;
 }
 
 export const DemandMapView: React.FC<DemandMapViewProps> = ({
@@ -86,6 +88,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
   onClearExternalPlace,
   radiusMaxKm = 25,
   deliveryCostInr = 125,
+  solverOutput = null,
 }) => {
   // Layer Toggles
   const [showHeatmap, setShowHeatmap] = useState(true);
@@ -128,6 +131,24 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
     if (!activeAssignment) return null;
     return hubs.find((h) => h.id === activeAssignment.warehouse_id) || null;
   }, [activeAssignment, hubs]);
+
+  const assignedDepotName = useMemo(() => {
+    const pinnedHubId = activeZone ? pinnedAssignments[activeZone.id] : undefined;
+    if (pinnedHubId) {
+      const pinnedHub = hubs.find((h) => h.id === pinnedHubId);
+      if (pinnedHub) return pinnedHub.name;
+    }
+    if (activeAssignment?.warehouse_name && !activeAssignment.warehouse_name.toLowerCase().includes('unassigned')) {
+      return activeAssignment.warehouse_name;
+    }
+    if (solverOutput && activeZone) {
+      const match = solverOutput.assignments.find((a) => a.zoneId === activeZone.id);
+      if (match && match.isCovered && match.hubAssignments.length > 0) {
+        return match.hubAssignments.map((h) => h.hubName).join(', ');
+      }
+    }
+    return 'Unassigned';
+  }, [activeZone, pinnedAssignments, hubs, activeAssignment, solverOutput]);
 
   const pairMetrics = useMemo(() => {
     if (!activeZone || !activeAssignment) return null;
@@ -580,7 +601,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
               </h2>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed break-words">
                 {activeZone
-                  ? `Demand zone at ${activeZone.lat.toFixed(4)}° N, ${activeZone.lng.toFixed(4)}° E with ${getEffectiveOrders(activeZone).toLocaleString()} daily orders.${activeAssignment?.warehouse_name ? ` Served by strategic depot ${activeAssignment.warehouse_name}.` : ' Standby status.'}`
+                  ? `Demand zone at ${activeZone.lat.toFixed(4)}° N, ${activeZone.lng.toFixed(4)}° E with ${getEffectiveOrders(activeZone).toLocaleString()} daily orders.${assignedDepotName !== 'Unassigned' ? ` Served by strategic depot ${assignedDepotName}.` : ' Standby status.'}`
                   : 'Select a delivery zone from the table or map to inspect catchment metrics.'}
               </p>
             </div>
@@ -621,11 +642,11 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
                 </div>
               </div>
 
-              {/* Assigned Hub */}
+              {/* Assigned Depot */}
               <div className="flex items-center justify-between gap-2 min-w-0">
-                <span className="text-slate-500 shrink-0">Assigned Hub:</span>
-                <span className="font-semibold text-blue-600 text-right truncate">
-                  {activeAssignment?.warehouse_name || 'Unassigned'}
+                <span className="text-slate-500 shrink-0">Assigned Depot:</span>
+                <span className="font-semibold text-blue-600 text-right truncate" data-testid="inspector-assigned-depot">
+                  {assignedDepotName}
                 </span>
               </div>
 
@@ -745,7 +766,8 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <ZoneDemandTable
             zones={zones}
-            assignments={optimizeData?.assignments as any}
+            hubs={hubs}
+            assignments={solverOutput?.assignments || (optimizeData?.assignments as any) || []}
             onUpdateZoneDemand={onUpdateZoneDemand}
             onSelectZone={onSelectZone}
             onDeleteZone={onDeleteZone}

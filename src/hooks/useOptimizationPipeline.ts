@@ -31,6 +31,7 @@ import {
 import { TelemetryEvent } from '../components/shell/Header';
 import bundledDemoTradeoff from '../data/demoTradeoff.json';
 import bundledDemoRank from '../data/demoRank.json';
+import bundledDemoResult from '../data/demoResult.json';
 
 export type DistanceMode = 'osrm' | 'road_detour' | 'haversine';
 export type PriorityPreset = 'cost' | 'speed' | 'sustainability';
@@ -79,7 +80,7 @@ export function useOptimizationPipeline() {
   const [isStale, setIsStale] = useState<boolean>(false);
 
   // 4. Solvers & Results State
-  const [optimizeData, setOptimizeData] = useState<OptimizeResponse | null>(null);
+  const [optimizeData, setOptimizeData] = useState<OptimizeResponse | null>(() => bundledDemoResult as any);
   const [compareData, setCompareData] = useState<CompareResponse | null>(null);
   const [tradeoffPoints] = useState<TradeoffPoint[]>(
     (bundledDemoTradeoff as any).points || []
