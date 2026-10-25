@@ -1,6 +1,7 @@
 import React from 'react';
 import { Currency, OptimizeResponse, CompareResponse } from '../types';
 import { formatMoney } from '../lib/currency';
+import { ORDERS_PER_DELIVERY_TRIP } from '../config/api';
 import { HelpCircle, ArrowDown, ArrowUp, MapPin, Truck, Leaf } from 'lucide-react';
 
 interface KpiCardsProps {
@@ -30,45 +31,52 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
     );
   }
 
-  // Savings Definitions:
-  // Net monthly savings = (baseline transit + baseline lease) - (optimized transit + optimized lease), × 30 days
-  // Transit savings % = reduction in transit cost only vs the single-warehouse centroid baseline.
-  const baselineTransit = compareData?.baseline?.total_delivery_cost ?? (optimizeData.total_delivery_cost * 1.45);
-  const baselineLease = compareData?.baseline?.total_infrastructure_cost ?? (1 * (optimizeData.assumptions?.fixed_cost_per_warehouse ?? 15000));
-  const baselineCombined = baselineTransit + baselineLease;
-
   const optTransit = optimizeData.total_delivery_cost;
   const optLease = optimizeData.total_infrastructure_cost;
   const optCombined = optTransit + optLease;
 
-  const netDailySavings = baselineCombined - optCombined;
-  const netMonthlySavings = optimizeData.estimated_monthly_savings || (netDailySavings * 30);
-  const transitSavingsPct = baselineTransit > 0 ? ((baselineTransit - optTransit) / baselineTransit) * 100 : 0;
-  const netSavingsPct = baselineCombined > 0 ? (netDailySavings / baselineCombined) * 100 : 0;
+  // Single-warehouse baseline (ignores capacity limits)
+  const singleWhTransit = compareData?.baseline?.total_delivery_cost ?? (optTransit * 1.45);
+  const singleWhLease = compareData?.baseline?.total_infrastructure_cost ?? (1 * (optimizeData.assumptions?.fixed_cost_per_warehouse ?? 15000));
+  const singleWhCombined = singleWhTransit + singleWhLease;
+  const singleWhDailySavings = singleWhCombined - optCombined;
+  const singleWhMonthlySavings = singleWhDailySavings * 30;
+
+  // Fair baseline: Naive network (same p sites chosen by k-means centroids snapped to candidate hubs)
+  const naive = compareData?.naive_same_p;
+  const hasNaive = Boolean(naive && naive.combined_total_cost > 0);
+  const naiveTransit = hasNaive && naive ? naive.total_delivery_cost : null;
+  const naiveCombined = hasNaive && naive ? naive.combined_total_cost : null;
+  const naiveIsSpillover = Boolean(hasNaive && naive?.is_spillover);
+
+  // Compare optimized against naive same-p network (equal lease, so savings come purely from placement)
+  const netDailySavings = hasNaive && naiveCombined !== null ? naiveCombined - optCombined : null;
+  const netMonthlySavings = netDailySavings !== null ? netDailySavings * 30 : null;
+  const netSavingsPct =
+    hasNaive && naiveCombined && naiveCombined > 0 && netDailySavings !== null
+      ? (netDailySavings / naiveCombined) * 100
+      : 0;
 
   // Delta badge styling calculation
   let deltaBadgeStyle = 'border-emerald-200 bg-emerald-50 text-emerald-700';
   let deltaBadgeText = '';
   let deltaIcon = <ArrowDown className="h-3 w-3" />;
 
-  const isTransitPositiveNetNegative = transitSavingsPct > 0 && netDailySavings < 0;
-  const isBreakEven = Math.abs(netDailySavings) <= 0.01 * baselineCombined;
-
-  if (isTransitPositiveNetNegative) {
+  if (!hasNaive || netDailySavings === null) {
+    deltaBadgeStyle = 'border-slate-200 bg-slate-50 text-slate-600';
+    deltaBadgeText = 'Infeasible baseline';
+    deltaIcon = <span className="text-[10px]">—</span>;
+  } else if (Math.abs(netDailySavings) <= 0.01 * (naiveCombined || 1)) {
     deltaBadgeStyle = 'border-amber-200 bg-amber-50 text-amber-700';
-    deltaBadgeText = `Transit −${transitSavingsPct.toFixed(1)}%, but lease costs outweigh savings`;
-    deltaIcon = <ArrowUp className="h-3 w-3" />;
-  } else if (isBreakEven) {
-    deltaBadgeStyle = 'border-amber-200 bg-amber-50 text-amber-700';
-    deltaBadgeText = 'Break-even (±0%)';
+    deltaBadgeText = `Break-even (±0%)${naiveIsSpillover ? ' (spillover)' : ''}`;
     deltaIcon = <span className="text-[10px]">≈</span>;
   } else if (netDailySavings > 0) {
     deltaBadgeStyle = 'border-emerald-200 bg-emerald-50 text-emerald-700';
-    deltaBadgeText = `Net saving (−${Math.abs(netSavingsPct).toFixed(1)}%)`;
+    deltaBadgeText = `Net saving (−${Math.abs(netSavingsPct).toFixed(1)}%)${naiveIsSpillover ? ' (spillover)' : ''}`;
     deltaIcon = <ArrowDown className="h-3 w-3" />;
   } else {
     deltaBadgeStyle = 'border-red-200 bg-red-50 text-red-700';
-    deltaBadgeText = `Net loss (+${Math.abs(netSavingsPct).toFixed(1)}%)`;
+    deltaBadgeText = `Net loss (+${Math.abs(netSavingsPct).toFixed(1)}%)${naiveIsSpillover ? ' (spillover)' : ''}`;
     deltaIcon = <ArrowUp className="h-3 w-3" />;
   }
 
@@ -80,8 +88,17 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
           <span>Daily Transit Cost</span>
           <div className="group relative">
             <HelpCircle className="h-3.5 w-3.5 text-gp-text-tertiary hover:text-gp-text-primary" />
-            <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded bg-slate-800 px-2.5 py-1 text-[11px] text-white shadow group-hover:block z-20">
-              Total demand-weighted travel cost per day across all served zones
+            <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 hidden -translate-x-1/2 w-72 rounded bg-slate-800 p-2.5 text-[11px] text-white shadow group-hover:block z-20">
+              <div className="font-semibold text-slate-100">Daily Transit Cost Formula:</div>
+              <div className="mt-1 font-mono text-[10px] text-emerald-300">
+                Σ (orders × road_km × cost_per_km / {ORDERS_PER_DELIVERY_TRIP})
+              </div>
+              <p className="mt-1.5 text-slate-300">
+                Consolidation factor: {ORDERS_PER_DELIVERY_TRIP} orders/trip (at {formatMoney(optimizeData.assumptions?.cost_per_km ?? 35, currency)}/km vehicle cost = {formatMoney((optimizeData.assumptions?.cost_per_km ?? 35) / ORDERS_PER_DELIVERY_TRIP, currency)}/ord·km).
+              </p>
+              <p className="mt-1 text-slate-400">
+                Base displays naive {optimizeData.warehouses.length}-depot placement.
+              </p>
             </div>
           </div>
         </div>
@@ -89,7 +106,10 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
           {formatMoney(optTransit, currency)}
         </div>
         <div className="mt-1 text-[11px] text-gp-text-tertiary">
-          Base: {formatMoney(baselineTransit, currency)}/day
+          <span title="Naive network baseline (same p sites chosen by k-means centroids snapped to candidate hubs, assigned with capacity)">
+            Base: {hasNaive && naiveTransit !== null ? `${formatMoney(naiveTransit, currency)}/day` : '—'}
+            {naiveIsSpillover ? ' (spillover)' : ''}
+          </span>
         </div>
       </div>
 
@@ -129,19 +149,34 @@ export const KpiCards: React.FC<KpiCardsProps> = ({
           <span>Net Monthly Savings</span>
           <div className="group relative">
             <HelpCircle className="h-3.5 w-3.5 text-gp-text-tertiary hover:text-gp-text-primary" />
-            <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 hidden -translate-x-1/2 w-64 rounded bg-slate-800 p-2 text-[11px] text-white shadow group-hover:block z-20">
-              <strong>Net monthly savings</strong> = (baseline transit + baseline lease) − (optimized transit + optimized lease), × 30 days
+            <div className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 hidden -translate-x-1/2 w-80 rounded bg-slate-800 p-2.5 text-[11px] text-white shadow group-hover:block z-20">
+              <p>
+                <strong>Primary Baseline (Naive network, same p):</strong> Compares optimized network against {optimizeData.warehouses.length} sites placed by demand-weighted k-means centroids snapped to candidate hubs with identical lease costs.
+              </p>
+              <p className="mt-2 border-t border-slate-700 pt-1.5">
+                <strong>Secondary Baseline:</strong> Single-warehouse baseline ignores capacity limits; p ≥ ceil(demand / capacity) sites are required.
+              </p>
+              <p className="mt-1.5 text-slate-400">
+                Formula: (baseline transit + baseline lease) − (optimized transit + optimized lease), × 30 days
+              </p>
             </div>
           </div>
         </div>
         <div className="mt-2 text-xl font-bold tabular-nums text-emerald-700 sm:text-2xl">
-          {formatMoney(netMonthlySavings, currency, { compact: true })}
+          {netMonthlySavings !== null
+            ? formatMoney(netMonthlySavings, currency, { compact: true })
+            : '—'}
         </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1">
-          <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${deltaBadgeStyle}`}>
-            {deltaIcon}
-            <span>{deltaBadgeText}</span>
-          </span>
+        <div className="mt-1.5 flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-1">
+            <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${deltaBadgeStyle}`}>
+              {deltaIcon}
+              <span>{deltaBadgeText}</span>
+            </span>
+          </div>
+          <div className="text-[10px] text-gp-text-tertiary">
+            vs single warehouse (ignores capacity): {singleWhMonthlySavings >= 0 ? '+' : ''}{formatMoney(singleWhMonthlySavings, currency, { compact: true })}
+          </div>
         </div>
       </div>
 

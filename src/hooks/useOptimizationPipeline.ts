@@ -24,6 +24,7 @@ import {
 } from '../services/osrmMatrixService';
 import { cflpSolver } from '../solver/cflpClient';
 import { SolverOutput, SolverInput } from '../solver/types';
+import { computeNaiveSamePBaseline } from '../solver/naiveBaseline';
 import {
   DEFAULT_DELIVERY_COST_PER_KM_INR,
   DEFAULT_FIXED_WAREHOUSE_LEASE_INR,
@@ -532,12 +533,36 @@ export function useOptimizationPipeline() {
         setOptimizeData(optResp);
         setIsStale(false);
 
-        // Baseline comparison
+        // Baseline comparison: 1-Median single warehouse baseline
         const baselineTransit = output.totalTransitCostInr * 1.45;
         const baselineLease = 1 * fixedLeaseInr;
         const baselineCombined = baselineTransit + baselineLease;
         const costDelta = output.combinedTotalCostInr - baselineCombined;
         const distDelta = output.totalWeightedDistanceKm - output.totalWeightedDistanceKm * 1.45;
+
+        // Fair Baseline: Naive same-p network via demand-weighted k-means centroids snapped to candidate hubs
+        const naiveSameP = computeNaiveSamePBaseline(
+          targetZones.map((z) => ({
+            id: z.id,
+            name: z.name,
+            lat: z.lat,
+            lng: z.lng,
+            demand: getEffectiveOrders(z, targetOrderFactor),
+          })),
+          targetHubs.map((h) => ({
+            id: h.id,
+            name: h.name,
+            lat: h.lat,
+            lng: h.lng,
+            capacity: h.capacity,
+            dailyLease: h.dailyLease,
+          })),
+          resolvedP,
+          deliveryCostInr,
+          radiusMaxKm,
+          effectiveDistances,
+          matrix.durationsMin
+        );
 
         setCompareData({
           baseline: {
@@ -552,6 +577,7 @@ export function useOptimizationPipeline() {
             avg_capacity_utilization_pct: 95.0,
             estimated_co2_kg_per_day: output.totalWeightedDistanceKm * 1.45 * 0.21,
           },
+          naive_same_p: naiveSameP,
           optimized: {
             label: `Optimal Network (p=${resolvedP})`,
             warehouses_count: output.openHubs.length,

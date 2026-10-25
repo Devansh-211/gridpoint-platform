@@ -16,6 +16,7 @@ import {
   AssignmentFraction,
   SolverMetrics,
 } from './types';
+import { ORDERS_PER_DELIVERY_TRIP } from '../config/api';
 
 const SLA_PENALTY_PER_ORDER = 10000.0; // Penalty per unserved order breaching SLA radius
 
@@ -256,7 +257,7 @@ function solveExactCFLPForP(
     warmStartHubIds,
   } = input;
 
-  const costPerOrderKm = costPerKm / 50.0;
+  const costPerOrderKm = costPerKm / ORDERS_PER_DELIVERY_TRIP;
   const totalDemand = zones.reduce((sum, z) => sum + z.demand, 0);
   const m = hubs.length;
   const p = targetP;

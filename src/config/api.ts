@@ -13,3 +13,10 @@ export const PHOTON_BASE_URL: string =
 export const DEFAULT_AVG_SPEED_KMH = 24.0;
 // Empirical road-to-Euclidean detour ratio
 export const DEFAULT_ROAD_DETOUR_FACTOR = 1.34;
+
+/**
+ * Vehicle batch consolidation factor: average customer orders delivered per delivery vehicle trip.
+ * Used to convert vehicle transit cost (cost_per_km, e.g. ₹35/km) to per-order-km transit cost:
+ * cost_per_order_km = cost_per_km / ORDERS_PER_DELIVERY_TRIP (e.g. ₹35 / 50 = ₹0.70 / ord·km).
+ */
+export const ORDERS_PER_DELIVERY_TRIP = 50.0;

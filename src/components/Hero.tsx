@@ -179,7 +179,7 @@ export const Hero: React.FC<HeroProps> = ({
           <Collapsible.Root open={whyOpen} onOpenChange={onWhyOpenChange} className="rounded-xl border border-gp-border bg-white shadow-sm">
             <div className="flex items-center justify-between p-4 sm:px-6">
               <div>
-                <h2 className="text-base font-bold text-gp-text-primary">Why GridPoint? vs Traditional Methods</h2>
+                <h2 className="text-base font-bold text-gp-text-primary">Why GridPoint?</h2>
                 <p className="text-xs text-gp-text-secondary">
                   Compare exact mathematical network optimization with legacy software and basic mapping tools.
                 </p>

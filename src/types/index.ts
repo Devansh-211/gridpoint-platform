@@ -78,10 +78,12 @@ export interface SystemMetricSnapshot {
   weighted_distance_km: number;
   avg_capacity_utilization_pct: number;
   estimated_co2_kg_per_day: number;
+  is_spillover?: boolean;
 }
 
 export interface CompareResponse {
   baseline: SystemMetricSnapshot;
+  naive_same_p?: SystemMetricSnapshot | null;
   optimized: SystemMetricSnapshot;
   cost_delta: number;
   cost_pct_change: number;
