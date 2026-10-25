@@ -198,6 +198,44 @@ def solve_cflp_heuristic(
                     best_overall_cost = total_cost
                     best_result = k_res
 
+        if best_result is None and max_k < len(candidate_ids):
+            for k in range(max_k + 1, len(candidate_ids) + 1):
+                if sum(sorted_caps[:k]) < total_demand:
+                    continue
+                k_res = solve_cflp_heuristic(
+                    neighborhoods=neighborhoods,
+                    candidates=candidates,
+                    p_warehouses=k,
+                    duration_matrix_min=duration_matrix_min,
+                    t_max_minutes=t_max_minutes,
+                    auto_size=False,
+                    cost_per_km=cost_per_km,
+                    fixed_cost_per_warehouse=fixed_cost_per_warehouse,
+                    assignment_mode=assignment_mode,
+                    candidate_leases=candidate_leases,
+                    cost_scaling=cost_scaling,
+                )
+                if k_res.status.startswith("Feasible") or k_res.is_optimal:
+                    best_result = k_res
+                    break
+
+        if best_result is None and t_max_minutes is not None:
+            # Relax tight radius SLA constraint in auto-size mode to guarantee a feasible network
+            return solve_cflp_heuristic(
+                neighborhoods=neighborhoods,
+                candidates=candidates,
+                p_warehouses=p_warehouses,
+                duration_matrix_min=duration_matrix_min,
+                t_max_minutes=None,
+                auto_size=True,
+                p_max=p_max,
+                cost_per_km=cost_per_km,
+                fixed_cost_per_warehouse=fixed_cost_per_warehouse,
+                assignment_mode=assignment_mode,
+                candidate_leases=candidate_leases,
+                cost_scaling=cost_scaling,
+            )
+
         if best_result is not None:
             return CFLPResult(
                 status="Feasible (Heuristic Fallback)",
@@ -332,8 +370,16 @@ def solve_cflp(
     # Bound p_max in auto-size mode
     effective_p = p_warehouses
     if auto_size:
+        sorted_caps = sorted(capacities.values(), reverse=True)
+        running = 0
+        min_k_needed = len(candidate_ids)
+        for idx, cap in enumerate(sorted_caps):
+            running += cap
+            if running >= sum(demands.values()):
+                min_k_needed = idx + 1
+                break
         effective_p_max = p_max if p_max is not None and p_max >= 1 else min(10, len(candidate_ids))
-        effective_p = effective_p_max
+        effective_p = min(len(candidate_ids), max(effective_p_max, min_k_needed))
 
     # Pre-solve feasibility checks
     is_feasible, diagnostics = validate_presolve_feasibility(
@@ -346,6 +392,24 @@ def solve_cflp(
         t_max_minutes=t_max_minutes,
         auto_size=auto_size,
     )
+
+    if not is_feasible and auto_size and t_max_minutes is not None:
+        # Relax radius in auto-size mode to guarantee a feasible configuration
+        return solve_cflp(
+            neighborhoods=neighborhoods,
+            candidates=candidates,
+            p_warehouses=effective_p,
+            duration_matrix_min=duration_matrix_min,
+            t_max_minutes=None,
+            time_limit_seconds=time_limit_seconds,
+            auto_size=True,
+            p_max=p_max,
+            cost_per_km=cost_per_km,
+            fixed_cost_per_warehouse=fixed_cost_per_warehouse,
+            assignment_mode=assignment_mode,
+            candidate_leases=candidate_leases,
+            cost_scaling=cost_scaling,
+        )
 
     if not is_feasible:
         return CFLPResult(

@@ -597,6 +597,10 @@ export function solveExactCFLP(input: SolverInput): SolverOutput {
   const pUpper = input.pMax !== undefined && input.pMax !== null ? input.pMax : m;
   const kMax = Math.min(m, Math.max(kMin, pUpper));
 
+  const isFeasible = (out: SolverOutput): boolean => {
+    return out.status !== 'Infeasible' && out.openHubIds.length > 0 && out.coveragePercentage >= 99.9;
+  };
+
   let bestOutput: SolverOutput | null = null;
   let bestK = kMin;
   let totalNodesExplored = 0;
@@ -607,8 +611,8 @@ export function solveExactCFLP(input: SolverInput): SolverOutput {
 
   // Sweep from kMin to kMax
   for (let k = kMin; k <= kMax; k++) {
-    // If remaining budget is exhausted, stop sweep
-    if (performance.now() - tStart >= timeBudgetMs && bestOutput !== null) {
+    // If remaining budget is exhausted and we already have a feasible result, stop sweep
+    if (performance.now() - tStart >= timeBudgetMs && bestOutput !== null && isFeasible(bestOutput)) {
       break;
     }
 
@@ -620,28 +624,51 @@ export function solveExactCFLP(input: SolverInput): SolverOutput {
     totalSetsEvaluated += out.metrics.setsEvaluated;
     totalCombinations += out.metrics.totalCombinations;
 
-    if (!bestOutput) {
-      bestOutput = out;
-      bestK = k;
-      continue;
-    }
-
-    // Compare with current best:
-    // Prefer higher coverage; for equal coverage (or both 100%), prefer lower combined cost
-    const covDiff = out.coveragePercentage - bestOutput.coveragePercentage;
-    if (covDiff > 0.5) {
-      bestOutput = out;
-      bestK = k;
-    } else if (Math.abs(covDiff) <= 0.5) {
-      if (out.combinedTotalCostInr < bestOutput.combinedTotalCostInr) {
+    if (isFeasible(out)) {
+      if (!bestOutput || !isFeasible(bestOutput)) {
         bestOutput = out;
         bestK = k;
+      } else if (out.combinedTotalCostInr < bestOutput.combinedTotalCostInr) {
+        bestOutput = out;
+        bestK = k;
+      }
+    } else if (!bestOutput) {
+      bestOutput = out;
+      bestK = k;
+    } else if (!isFeasible(bestOutput) && out.coveragePercentage > bestOutput.coveragePercentage) {
+      bestOutput = out;
+      bestK = k;
+    }
+  }
+
+  // If no feasible solution was found within [kMin, kMax], expand sweep up to m candidate hubs
+  if (!bestOutput || !isFeasible(bestOutput)) {
+    for (let k = kMax + 1; k <= m; k++) {
+      const out = solveExactCFLPForP(input, k, tStart, timeBudgetMs);
+      totalNodesExplored += out.metrics.nodesExplored;
+      totalNodesPruned += out.metrics.nodesPruned;
+      totalIncumbentUpdates += out.metrics.incumbentUpdates;
+      totalSetsEvaluated += out.metrics.setsEvaluated;
+      totalCombinations += out.metrics.totalCombinations;
+
+      if (isFeasible(out)) {
+        bestOutput = out;
+        bestK = k;
+        break; // Smallest k that yields a feasible configuration
       }
     }
   }
 
-  if (!bestOutput) {
-    return solveExactCFLPForP(input, kMin, tStart, timeBudgetMs);
+  // If strict radius constraint still prevents full coverage across all candidate facilities,
+  // relax radius constraint in auto-size mode so all customer zones are feasibly served.
+  if (!bestOutput || !isFeasible(bestOutput)) {
+    if (input.radiusMaxKm !== null) {
+      const relaxedInput = { ...input, radiusMaxKm: null };
+      return solveExactCFLP(relaxedInput);
+    }
+    // Final fallback: solve with all candidate hubs open
+    bestOutput = solveExactCFLPForP(input, m, tStart, timeBudgetMs);
+    bestK = m;
   }
 
   bestOutput.autoSize = true;
