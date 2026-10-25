@@ -47,11 +47,12 @@ export interface TopologyDiff {
 export const STORAGE_KEY_V2 = 'gridpoint_network_v2';
 
 /**
- * Returns effective orders for a zone = round(baseOrders * multiplier)
+ * Returns effective orders for a zone = round(baseOrders * multiplier * orderFactor)
  */
-export function getEffectiveOrders(zone: EditableZone): number {
+export function getEffectiveOrders(zone: EditableZone, orderFactor: number = 1.0): number {
   const mult = typeof zone.multiplier === 'number' && zone.multiplier > 0 ? zone.multiplier : 1.0;
-  return Math.max(0, Math.round(zone.baseOrders * mult));
+  const factor = typeof orderFactor === 'number' && orderFactor > 0 ? orderFactor : 1.0;
+  return Math.max(0, Math.round(zone.baseOrders * mult * factor));
 }
 
 /**

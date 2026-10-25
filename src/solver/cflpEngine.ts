@@ -238,25 +238,28 @@ export function solveTransportationProblem(
 }
 
 /**
- * Solves the Capacitated Facility Location Problem (CFLP) to global mathematical optimality.
+ * Solves CFLP for a specific target integer p.
  */
-export function solveExactCFLP(input: SolverInput): SolverOutput {
-  const tStart = performance.now();
+function solveExactCFLPForP(
+  input: SolverInput,
+  targetP: number,
+  tStart: number,
+  timeBudgetMs: number
+): SolverOutput {
   const {
     zones,
     hubs,
-    p,
     costPerKm,
     radiusMaxKm = null,
     distanceMatrixKm,
     durationMatrixMin,
     warmStartHubIds,
-    timeBudgetMs = 400,
   } = input;
 
   const costPerOrderKm = costPerKm / 50.0;
   const totalDemand = zones.reduce((sum, z) => sum + z.demand, 0);
   const m = hubs.length;
+  const p = targetP;
 
   const metrics: SolverMetrics = {
     nodesExplored: 0,
@@ -359,7 +362,6 @@ export function solveExactCFLP(input: SolverInput): SolverOutput {
   }
 
   // 3. Branch-and-bound recursion
-  // chosenIndices tracks the indices of selected hubs in sortedHubs
   const chosenIndices: number[] = new Array(p);
 
   function branchAndBound(hubIdx: number, chosenCount: number, currentLeaseSum: number, currentCapSum: number): void {
@@ -552,4 +554,109 @@ export function solveExactCFLP(input: SolverInput): SolverOutput {
     averageDistanceKm: avgDist,
     metrics,
   };
+}
+
+/**
+ * Solves the Capacitated Facility Location Problem (CFLP) to global mathematical optimality.
+ * If autoSize is true, sweeps candidate warehouse counts k in [kMin, kMax] and returns
+ * the network topology with minimal total combined cost (transit + lease).
+ */
+export function solveExactCFLP(input: SolverInput): SolverOutput {
+  const tStart = performance.now();
+  const timeBudgetMs = input.timeBudgetMs ?? 600;
+
+  if (!input.autoSize) {
+    return solveExactCFLPForP(input, input.p, tStart, timeBudgetMs);
+  }
+
+  const totalDemand = input.zones.reduce((sum, z) => sum + z.demand, 0);
+  const m = input.hubs.length;
+
+  if (m === 0 || input.zones.length === 0) {
+    return solveExactCFLPForP(input, 1, tStart, timeBudgetMs);
+  }
+
+  // 1. Determine minimum feasible k (kMin) based on capacity requirement
+  const sortedCapsDesc = [...input.hubs.map((h) => h.capacity)].sort((a, b) => b - a);
+  let runningCap = 0;
+  let kMin = 1;
+  for (let i = 0; i < sortedCapsDesc.length; i++) {
+    runningCap += sortedCapsDesc[i];
+    if (runningCap >= totalDemand) {
+      kMin = i + 1;
+      break;
+    }
+  }
+  if (runningCap < totalDemand) {
+    kMin = m;
+  }
+  kMin = Math.max(1, Math.min(m, kMin));
+
+  // 2. Determine upper bound kMax
+  const pUpper = input.pMax !== undefined && input.pMax !== null ? input.pMax : m;
+  const kMax = Math.min(m, Math.max(kMin, pUpper));
+
+  let bestOutput: SolverOutput | null = null;
+  let bestK = kMin;
+  let totalNodesExplored = 0;
+  let totalNodesPruned = 0;
+  let totalIncumbentUpdates = 0;
+  let totalSetsEvaluated = 0;
+  let totalCombinations = 0;
+
+  // Sweep from kMin to kMax
+  for (let k = kMin; k <= kMax; k++) {
+    // If remaining budget is exhausted, stop sweep
+    if (performance.now() - tStart >= timeBudgetMs && bestOutput !== null) {
+      break;
+    }
+
+    const out = solveExactCFLPForP(input, k, tStart, timeBudgetMs);
+
+    totalNodesExplored += out.metrics.nodesExplored;
+    totalNodesPruned += out.metrics.nodesPruned;
+    totalIncumbentUpdates += out.metrics.incumbentUpdates;
+    totalSetsEvaluated += out.metrics.setsEvaluated;
+    totalCombinations += out.metrics.totalCombinations;
+
+    if (!bestOutput) {
+      bestOutput = out;
+      bestK = k;
+      continue;
+    }
+
+    // Compare with current best:
+    // Prefer higher coverage; for equal coverage (or both 100%), prefer lower combined cost
+    const covDiff = out.coveragePercentage - bestOutput.coveragePercentage;
+    if (covDiff > 0.5) {
+      bestOutput = out;
+      bestK = k;
+    } else if (Math.abs(covDiff) <= 0.5) {
+      if (out.combinedTotalCostInr < bestOutput.combinedTotalCostInr) {
+        bestOutput = out;
+        bestK = k;
+      }
+    }
+  }
+
+  if (!bestOutput) {
+    return solveExactCFLPForP(input, kMin, tStart, timeBudgetMs);
+  }
+
+  bestOutput.autoSize = true;
+  bestOutput.metrics = {
+    nodesExplored: totalNodesExplored,
+    nodesPruned: totalNodesPruned,
+    incumbentUpdates: totalIncumbentUpdates,
+    setsEvaluated: totalSetsEvaluated,
+    totalCombinations: totalCombinations,
+    elapsedMs: Math.round((performance.now() - tStart) * 10) / 10,
+  };
+  bestOutput.sizingRationale = `Auto-sized to ${bestK} warehouses: minimum combined daily cost (₹${Math.round(
+    bestOutput.combinedTotalCostInr
+  ).toLocaleString('en-IN')}) with ${bestOutput.coveragePercentage}% demand coverage across ${totalDemand.toLocaleString(
+    'en-IN'
+  )} daily orders.`;
+
+  return bestOutput;
 }

@@ -32,6 +32,8 @@ interface NetworkConfigViewProps {
   onPriorityPresetChange: (preset: PriorityPreset) => void;
   autoSize: boolean;
   onAutoSizeChange: (val: boolean) => void;
+  orderFactor?: number;
+  onOrderFactorChange?: (factor: number) => void;
   distanceMode: DistanceMode;
   onDistanceModeChange: (mode: DistanceMode) => void;
   onRunSolver: () => void;
@@ -62,6 +64,8 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
   onPriorityPresetChange,
   autoSize,
   onAutoSizeChange,
+  orderFactor = 1.0,
+  onOrderFactorChange,
   distanceMode,
   onDistanceModeChange,
   onRunSolver,
@@ -80,8 +84,8 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
 
   // Synchronous calculations
   const totalDemand = useMemo(() => {
-    return zones.reduce((sum, z) => sum + getEffectiveOrders(z), 0);
-  }, [zones]);
+    return zones.reduce((sum, z) => sum + getEffectiveOrders(z, orderFactor), 0);
+  }, [zones, orderFactor]);
 
   const activeHubsCount = optimizeData?.warehouses.length || p;
   const totalCapacity = activeHubsCount * warehouseCapacity;
@@ -212,9 +216,17 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Active Warehouse Constraint (p)
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Active Warehouse Constraint (p)
+                      </span>
+                      {autoSize && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+                          <Sparkles className="h-3 w-3 text-blue-600" />
+                          Auto-Sized ({activeHubsCount} Hubs)
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-slate-400">
                       Target fulfillment centers deployed across the metropolitan cluster
                     </p>
@@ -254,8 +266,72 @@ export const NetworkConfigView: React.FC<NetworkConfigViewProps> = ({
 
                 <div className="flex justify-between text-[11px] font-medium text-slate-400">
                   <span>1 Node (Min)</span>
-                  <span className="text-blue-600 font-bold">{p} Active Selected</span>
+                  <span className="text-blue-600 font-bold">
+                    {p} Active {autoSize ? '(Auto-Selected)' : 'Selected'}
+                  </span>
                   <span>{maxCandidateNodes} Candidate Nodes</span>
+                </div>
+
+                {/* Metro Order Factor Slider & Multiplier */}
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                          Metro Order Demand Factor
+                        </span>
+                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-700 border border-slate-200">
+                          {orderFactor.toFixed(1)}x
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Scale metro-wide order demand dynamically to observe network auto-sizing
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[0.5, 1.0, 1.5, 2.0].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => onOrderFactorChange?.(preset)}
+                          className={`px-2 py-1 text-xs font-semibold rounded-md border transition ${
+                            Math.abs(orderFactor - preset) < 0.05
+                              ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-xs'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {preset}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={3.0}
+                    step={0.1}
+                    value={orderFactor}
+                    onChange={(e) => onOrderFactorChange?.(parseFloat(e.target.value))}
+                    className="w-full accent-blue-600"
+                    aria-label="Order demand factor"
+                    data-testid="order-factor-slider"
+                  />
+
+                  <div className="flex justify-between text-[11px] font-medium text-slate-400">
+                    <span>0.5x (Low Off-Peak)</span>
+                    <span className="text-slate-600 font-semibold">
+                      Effective Demand: {totalDemand.toLocaleString()} ord/day
+                    </span>
+                    <span>3.0x (Peak Surge)</span>
+                  </div>
+
+                  {autoSize && optimizeData?.sizing_rationale && (
+                    <div className="rounded-lg bg-blue-50/80 border border-blue-200 p-2.5 text-xs text-blue-800 flex items-start gap-2 mt-2">
+                      <Sparkles className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                      <span className="font-medium">{optimizeData.sizing_rationale}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

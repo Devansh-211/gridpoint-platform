@@ -71,7 +71,8 @@ export function useOptimizationPipeline() {
   const [deliveryCostInr, setDeliveryCostInr] = useState<number>(DEFAULT_DELIVERY_COST_PER_KM_INR);
   const [fixedLeaseInr, setFixedLeaseInr] = useState<number>(DEFAULT_FIXED_WAREHOUSE_LEASE_INR);
   const [priorityPreset, setPriorityPreset] = useState<PriorityPreset>('cost');
-  const [autoSize, setAutoSize] = useState<boolean>(false);
+  const [autoSize, setAutoSizeState] = useState<boolean>(false);
+  const [orderFactor, setOrderFactorState] = useState<number>(1.0);
   const [pMax, setPMax] = useState<number | null>(6);
   const [distanceMode, setDistanceMode] = useState<DistanceMode>('osrm');
 
@@ -122,16 +123,16 @@ export function useOptimizationPipeline() {
 
   // 6. Synchronous Arithmetic Computations
   const totalDemand = useMemo(() => {
-    return zones.reduce((sum, z) => sum + getEffectiveOrders(z), 0);
-  }, [zones]);
+    return zones.reduce((sum, z) => sum + getEffectiveOrders(z, orderFactor), 0);
+  }, [zones, orderFactor]);
 
   const peakDemandZone = useMemo(() => {
     if (zones.length === 0) return null;
     return zones.reduce((max, z) =>
-      getEffectiveOrders(z) > getEffectiveOrders(max) ? z : max,
+      getEffectiveOrders(z, orderFactor) > getEffectiveOrders(max, orderFactor) ? z : max,
       zones[0]
     );
-  }, [zones]);
+  }, [zones, orderFactor]);
 
   const activeHubsCount = useMemo(() => {
     return solverOutput?.openHubs.length || p;
@@ -183,9 +184,11 @@ export function useOptimizationPipeline() {
       output: SolverOutput,
       currentZones: EditableZone[],
       currentHubs: EditableHub[],
-      currentP: number
+      currentP: number,
+      isAuto: boolean = false,
+      currentOrderFactor: number = 1.0
     ): OptimizeResponse => {
-      const totalSystemDemand = currentZones.reduce((acc, z) => acc + getEffectiveOrders(z), 0);
+      const totalSystemDemand = currentZones.reduce((acc, z) => acc + getEffectiveOrders(z, currentOrderFactor), 0);
       const totalSystemCapacity = output.openHubs.reduce((acc, h) => acc + h.capacity, 0);
       const headroom = Math.max(0, totalSystemCapacity - totalSystemDemand);
       const headroomPct = totalSystemCapacity > 0 ? (headroom / totalSystemCapacity) * 100 : 0;
@@ -253,11 +256,13 @@ export function useOptimizationPipeline() {
       return {
         status: output.status,
         solver_message: output.isOptimal
-          ? 'Exact optimal solution proven via Live Branch-and-Bound CFLP'
+          ? (isAuto
+              ? output.sizingRationale || 'Exact optimal auto-sized network proven via Live B&B'
+              : 'Exact optimal solution proven via Live Branch-and-Bound CFLP')
           : 'Anytime feasible incumbent solution',
         is_optimal: output.isOptimal,
         p: currentP,
-        auto_size: false,
+        auto_size: isAuto,
         total_weighted_distance_km: output.totalWeightedDistanceKm,
         average_distance_km: output.averageDistanceKm,
         total_delivery_cost: output.totalTransitCostInr,
@@ -267,7 +272,7 @@ export function useOptimizationPipeline() {
         total_system_demand: totalSystemDemand,
         capacity_headroom: headroom,
         capacity_headroom_pct: headroomPct,
-        sizing_rationale: null,
+        sizing_rationale: output.sizingRationale || null,
         coverage_percentage: output.coveragePercentage,
         fast_delivery_coverage_pct: output.fastDeliveryCoveragePct,
         unserved_demand: output.assignments
@@ -285,7 +290,7 @@ export function useOptimizationPipeline() {
         warehouses,
         assignments,
         solve_ms: output.metrics.elapsedMs,
-        solver_status: output.isOptimal ? 'Live Exact B&B' : 'Anytime Best',
+        solver_status: output.isOptimal ? (isAuto ? 'Live Auto-Sized CFLP' : 'Live Exact B&B') : 'Anytime Best',
         mip_gap: output.isOptimal ? 0.0 : 0.02,
       };
     },
@@ -376,7 +381,9 @@ export function useOptimizationPipeline() {
     async (
       targetZones: EditableZone[] = zones,
       targetHubs: EditableHub[] = hubs,
-      targetP: number = p
+      targetP: number = p,
+      targetAutoSize: boolean = autoSize,
+      targetOrderFactor: number = orderFactor
     ) => {
       const thisVersion = ++solveVersionRef.current;
       setIsSolving(true);
@@ -417,7 +424,7 @@ export function useOptimizationPipeline() {
             name: z.name,
             lat: z.lat,
             lng: z.lng,
-            demand: getEffectiveOrders(z),
+            demand: getEffectiveOrders(z, targetOrderFactor),
           })),
           hubs: targetHubs.map((h) => ({
             id: h.id,
@@ -428,6 +435,8 @@ export function useOptimizationPipeline() {
             dailyLease: h.dailyLease,
           })),
           p: targetP,
+          autoSize: targetAutoSize,
+          pMax: pMax,
           costPerKm: deliveryCostInr,
           radiusMaxKm: radiusMaxKm,
           distanceMatrixKm: effectiveDistances,
@@ -447,7 +456,7 @@ export function useOptimizationPipeline() {
             body: JSON.stringify({
               session_id: 'default',
               p: targetP,
-              auto_size: false,
+              auto_size: targetAutoSize,
               p_max: pMax,
               warehouse_capacity: warehouseCapacity,
               radius_max_km: radiusMaxKm,
@@ -462,6 +471,8 @@ export function useOptimizationPipeline() {
             status: 'Optimal',
             isOptimal: true,
             isAnytimeBest: false,
+            autoSize: targetAutoSize,
+            sizingRationale: fbJson.sizing_rationale ?? undefined,
             openHubIds: fbJson.warehouses.map((w) => w.warehouse_id),
             openHubs: fbJson.warehouses.map((w) => ({
               hubId: w.warehouse_id,
@@ -504,8 +515,20 @@ export function useOptimizationPipeline() {
           setTopologyDiff(diff);
         }
 
+        const resolvedP = output.openHubs.length > 0 ? output.openHubs.length : targetP;
+        if (targetAutoSize && resolvedP !== p) {
+          setP(resolvedP);
+        }
+
         // Step 5: Update responses
-        const optResp = buildOptimizeResponse(output, targetZones, targetHubs, targetP);
+        const optResp = buildOptimizeResponse(
+          output,
+          targetZones,
+          targetHubs,
+          resolvedP,
+          targetAutoSize,
+          targetOrderFactor
+        );
         setOptimizeData(optResp);
         setIsStale(false);
 
@@ -530,7 +553,7 @@ export function useOptimizationPipeline() {
             estimated_co2_kg_per_day: output.totalWeightedDistanceKm * 1.45 * 0.21,
           },
           optimized: {
-            label: `Optimal Network (p=${targetP})`,
+            label: `Optimal Network (p=${resolvedP})`,
             warehouses_count: output.openHubs.length,
             warehouses_open: output.openHubs.map((h) => h.name),
             total_delivery_cost: output.totalTransitCostInr,
@@ -558,10 +581,14 @@ export function useOptimizationPipeline() {
           },
         });
 
-        addEvent('solve', `Optimization Completed (p=${targetP})`, `Solved in ${output.metrics.elapsedMs}ms • Cost: ₹${Math.round(output.combinedTotalCostInr).toLocaleString()}`);
+        addEvent(
+          'solve',
+          `Optimization Completed (${targetAutoSize ? 'Auto-Sized ' : ''}p=${resolvedP})`,
+          `Solved in ${output.metrics.elapsedMs}ms • Cost: ₹${Math.round(output.combinedTotalCostInr).toLocaleString()}`
+        );
 
         // Step 6: Background Verification
-        verifyWithCbc(effectiveDistances, targetP, output.combinedTotalCostInr);
+        verifyWithCbc(effectiveDistances, resolvedP, output.combinedTotalCostInr);
       } catch (err: any) {
         console.warn('Pipeline error:', err);
         setErrorNotice('Notice: Optimization step encountered an issue. Local results preserved.');
@@ -576,6 +603,8 @@ export function useOptimizationPipeline() {
       zones,
       hubs,
       p,
+      autoSize,
+      orderFactor,
       distanceMode,
       deliveryCostInr,
       radiusMaxKm,
@@ -591,7 +620,13 @@ export function useOptimizationPipeline() {
 
   // Debounced auto-reoptimize on change
   const scheduleDebouncedSolve = useCallback(
-    (newZones: EditableZone[], newHubs: EditableHub[], newP: number) => {
+    (
+      newZones: EditableZone[],
+      newHubs: EditableHub[],
+      newP: number,
+      newAutoSize: boolean = autoSize,
+      newOrderFactor: number = orderFactor
+    ) => {
       if (!autoReoptimize) {
         setIsStale(true);
         addEvent('stale', 'Results Stale', 'Network inputs edited with auto-reoptimize disabled.');
@@ -601,10 +636,10 @@ export function useOptimizationPipeline() {
         clearTimeout(debounceTimerRef.current);
       }
       debounceTimerRef.current = setTimeout(() => {
-        executeLiveSolve(newZones, newHubs, newP);
+        executeLiveSolve(newZones, newHubs, newP, newAutoSize, newOrderFactor);
       }, 180);
     },
-    [autoReoptimize, executeLiveSolve, addEvent]
+    [autoReoptimize, executeLiveSolve, addEvent, autoSize, orderFactor]
   );
 
   // 11. Zone & Hub Operations
@@ -848,37 +883,46 @@ export function useOptimizationPipeline() {
 
     // Actions
     handleCurrencyChange,
+    orderFactor,
+    setOrderFactor: (factor: number) => {
+      const clamped = Math.max(0.1, Math.min(5.0, factor));
+      setOrderFactorState(clamped);
+      scheduleDebouncedSolve(zones, hubs, p, autoSize, clamped);
+    },
     setP: (newP: number) => {
       setP(newP);
-      scheduleDebouncedSolve(zones, hubs, newP);
+      scheduleDebouncedSolve(zones, hubs, newP, autoSize, orderFactor);
     },
     setWarehouseCapacity: (cap: number) => {
       setWarehouseCapacity(cap);
-      scheduleDebouncedSolve(zones, hubs, p);
+      scheduleDebouncedSolve(zones, hubs, p, autoSize, orderFactor);
     },
     setRadiusMaxKm: (r: number | null) => {
       setRadiusMaxKm(r);
-      scheduleDebouncedSolve(zones, hubs, p);
+      scheduleDebouncedSolve(zones, hubs, p, autoSize, orderFactor);
     },
     setDeliveryCostInr: (cost: number) => {
       setDeliveryCostInr(cost);
-      scheduleDebouncedSolve(zones, hubs, p);
+      scheduleDebouncedSolve(zones, hubs, p, autoSize, orderFactor);
     },
     setFixedLeaseInr: (lease: number) => {
       setFixedLeaseInr(lease);
-      scheduleDebouncedSolve(zones, hubs, p);
+      scheduleDebouncedSolve(zones, hubs, p, autoSize, orderFactor);
     },
     setPriorityPreset: (preset: PriorityPreset) => {
       setPriorityPreset(preset);
       if (preset === 'speed') setRadiusMaxKm(12);
       else if (preset === 'cost') setRadiusMaxKm(25);
-      scheduleDebouncedSolve(zones, hubs, p);
+      scheduleDebouncedSolve(zones, hubs, p, autoSize, orderFactor);
     },
-    setAutoSize,
+    setAutoSize: (val: boolean) => {
+      setAutoSizeState(val);
+      scheduleDebouncedSolve(zones, hubs, p, val, orderFactor);
+    },
     setPMax,
     setDistanceMode: (mode: DistanceMode) => {
       setDistanceMode(mode);
-      executeLiveSolve(zones, hubs, p);
+      executeLiveSolve(zones, hubs, p, autoSize, orderFactor);
     },
     setAutoReoptimize,
     handleUpdateZoneDemand,
@@ -891,7 +935,7 @@ export function useOptimizationPipeline() {
     handleUnpinAssignment,
     handleApplyPreset,
     handleResetDemoData,
-    runManualSolve: () => executeLiveSolve(zones, hubs, p),
+    runManualSolve: () => executeLiveSolve(zones, hubs, p, autoSize, orderFactor),
     checkHealth,
     clearTopologyDiff: () => setTopologyDiff(null),
   };

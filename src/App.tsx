@@ -345,6 +345,8 @@ export const App: React.FC = () => {
             onPriorityPresetChange={pipeline.setPriorityPreset}
             autoSize={pipeline.autoSize}
             onAutoSizeChange={pipeline.setAutoSize}
+            orderFactor={pipeline.orderFactor}
+            onOrderFactorChange={pipeline.setOrderFactor}
             distanceMode={pipeline.distanceMode}
             onDistanceModeChange={pipeline.setDistanceMode}
             optimizeData={pipeline.optimizeData}

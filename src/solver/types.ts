@@ -22,7 +22,9 @@ export interface SolverHub {
 export interface SolverInput {
   zones: SolverZone[];
   hubs: SolverHub[];
-  p: number; // Exactly p warehouses to open
+  p: number; // Exactly p warehouses to open (or starting seed if autoSize is true)
+  autoSize?: boolean; // If true, sweep k in [kMin, kMax] to minimize combined cost
+  pMax?: number | null; // Upper bound for auto-sizing sweep
   costPerKm: number; // INR per vehicle-km
   radiusMaxKm?: number | null; // Optional SLA radius
   distanceMatrixKm: Record<string, Record<string, number>>; // [hubId][zoneId]
@@ -61,6 +63,8 @@ export interface SolverOutput {
   status: 'Optimal' | 'Feasible' | 'Infeasible';
   isOptimal: boolean;
   isAnytimeBest: boolean; // True if budget exceeded before full branch-and-bound proof
+  autoSize?: boolean;
+  sizingRationale?: string;
   openHubIds: string[];
   openHubs: {
     hubId: string;
