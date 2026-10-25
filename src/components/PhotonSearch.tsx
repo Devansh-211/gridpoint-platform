@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   searchPhotonPlaces,
   PhotonPlaceResult,
+  pickSpecificLabel,
+  buildFullAddress,
 } from '../services/photonService';
 import {
   EditableZone,
@@ -10,6 +12,7 @@ import {
   getNextZoneId,
   getNextHubId,
 } from '../lib/networkState';
+import { checkIsOutlier } from '../lib/geoBounds';
 import { Currency } from '../types';
 import { formatMoney, convertCurrency } from '../lib/currency';
 import { Z_CLASSES } from '../config/zIndexTokens';
@@ -20,6 +23,7 @@ import {
   Plus,
   Loader2,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface PhotonSearchProps {
@@ -132,11 +136,22 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
     }
   }, [selectedPlace]);
 
+  // Outlier detection (>100 km from network median center)
+  const outlierInfo = useMemo(() => {
+    if (!selectedPlace) return { isOutlier: false, distanceKm: 0 };
+    const allNetworkPoints = [
+      ...existingZones.map((z) => ({ lat: z.lat, lng: z.lng })),
+      ...existingHubs.map((h) => ({ lat: h.lat, lng: h.lng })),
+    ];
+    return checkIsOutlier({ lat: selectedPlace.lat, lng: selectedPlace.lng }, allNetworkPoints, 100);
+  }, [selectedPlace, existingZones, existingHubs]);
+
   // When external place (e.g. from map click) arrives, open form directly
   useEffect(() => {
     if (externalPlace) {
       setSelectedPlace(externalPlace);
-      setLabel(externalPlace.name || externalPlace.label);
+      const specific = pickSpecificLabel(externalPlace.rawProperties, externalPlace.lat, externalPlace.lng);
+      setLabel(specific || externalPlace.name || externalPlace.label);
       setNodeType('zone');
       setZoneOrders(350);
     }
@@ -206,7 +221,8 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
 
   const handleSelectPlace = (place: PhotonPlaceResult) => {
     setSelectedPlace(place);
-    setLabel(place.name || place.label);
+    const specific = pickSpecificLabel(place.rawProperties, place.lat, place.lng);
+    setLabel(specific || place.name || place.label);
     setIsDropdownOpen(false);
     setQuery('');
   };
@@ -222,18 +238,19 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
 
     if (nodeType === 'zone') {
       const newZone: EditableZone = {
-        id: getNextZoneId(existingZones),
+        id: getNextZoneId(existingZones, { lat: selectedPlace.lat, lng: selectedPlace.lng }),
         name: label.trim() || selectedPlace.name || 'New Demand Zone',
         lat: selectedPlace.lat,
         lng: selectedPlace.lng,
-        baseOrders: Math.max(10, Math.min(5000, zoneOrders)),
+        baseOrders: Math.max(10, Math.min(50000, zoneOrders)),
         multiplier: 1.0,
         source: externalPlace ? 'map' : 'search',
+        isOutlier: outlierInfo.isOutlier,
       };
       onAddZone(newZone);
     } else {
       const newHub: EditableHub = {
-        id: getNextHubId(existingHubs),
+        id: getNextHubId(existingHubs, { lat: selectedPlace.lat, lng: selectedPlace.lng }),
         name: label.trim() || selectedPlace.name || 'New Candidate Hub',
         lat: selectedPlace.lat,
         lng: selectedPlace.lng,
@@ -403,7 +420,7 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
                     }`}
                   >
                     <MapPin className="h-4 w-4" />
-                    <span>📦 Delivery Zone</span>
+                    <span>Delivery Zone</span>
                   </button>
 
                   <button
@@ -416,10 +433,20 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
                     }`}
                   >
                     <Building2 className="h-4 w-4" />
-                    <span>🏭 Candidate Hub</span>
+                    <span>Candidate Hub</span>
                   </button>
                 </div>
               </div>
+
+              {/* Distant Outlier Inline Warning */}
+              {outlierInfo.isOutlier && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-800">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Distant Location Warning:</span> This location is about {Math.round(outlierInfo.distanceKm)} km from your current network; distances and costs will be large.
+                  </div>
+                </div>
+              )}
 
               {/* Name & Coordinates */}
               <div className="space-y-1.5">
@@ -434,13 +461,16 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
                   required
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 font-medium text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 italic mt-0.5">
+                  {buildFullAddress(selectedPlace)}
+                </p>
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
                   <span>
                     Auto ID:{' '}
                     <strong className="font-mono text-blue-700">
                       {nodeType === 'zone'
-                        ? getNextZoneId(existingZones)
-                        : getNextHubId(existingHubs)}
+                        ? getNextZoneId(existingZones, { lat: selectedPlace.lat, lng: selectedPlace.lng })
+                        : getNextHubId(existingHubs, { lat: selectedPlace.lat, lng: selectedPlace.lng })}
                     </strong>
                   </span>
                   <span className="font-mono">
@@ -449,26 +479,48 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
                 </div>
               </div>
 
-              {/* Zone Form: Daily Orders Slider & Input */}
+              {/* Zone Form: Daily Orders Slider & Synced Number Input */}
               {nodeType === 'zone' ? (
                 <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                   <div className="flex items-center justify-between font-bold text-slate-700">
-                    <span>Daily Delivery Orders</span>
-                    <span className="text-blue-700">{zoneOrders.toLocaleString()} orders/day</span>
+                    <label htmlFor="zone-orders-input" className="cursor-pointer">
+                      Daily Delivery Orders
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        id="zone-orders-input"
+                        type="number"
+                        min="10"
+                        max="50000"
+                        step="10"
+                        value={zoneOrders}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val)) {
+                            setZoneOrders(Math.max(10, Math.min(50000, val)));
+                          } else {
+                            setZoneOrders(10);
+                          }
+                        }}
+                        className="w-20 rounded border border-slate-300 bg-white px-2 py-0.5 text-right font-mono font-bold text-blue-700 focus:border-blue-500 focus:outline-none"
+                      />
+                      <span className="text-slate-500 font-normal">ord/day</span>
+                    </div>
                   </div>
                   <input
                     type="range"
                     min="10"
                     max="5000"
                     step="10"
-                    value={zoneOrders}
+                    value={Math.min(5000, zoneOrders)}
                     onChange={(e) => setZoneOrders(parseInt(e.target.value, 10))}
                     className="w-full cursor-pointer accent-blue-600"
+                    aria-label="Daily Delivery Orders Slider"
                   />
                   <div className="flex items-center justify-between text-[11px] text-slate-400">
                     <span>10 min</span>
                     <span>2,500</span>
-                    <span>5,000 max</span>
+                    <span>5,000 max (slider)</span>
                   </div>
                 </div>
               ) : (

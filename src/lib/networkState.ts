@@ -7,6 +7,7 @@
 import { SolverOutput } from '../solver/types';
 import bundledDemoZones from '../data/demoZones.json';
 import { CANDIDATE_PLOTS } from '../data/candidatePlots';
+import { haversineDistanceKm } from './geoBounds';
 
 export interface EditableZone {
   id: string;
@@ -16,6 +17,7 @@ export interface EditableZone {
   baseOrders: number;
   multiplier: number; // 1, 1.5, 2, etc. (never compounds)
   source: 'demo' | 'csv' | 'search' | 'map';
+  isOutlier?: boolean;
 }
 
 export interface EditableHub {
@@ -136,10 +138,23 @@ export function clearSavedNetwork(): void {
 }
 
 /**
- * Generates next unique Zone ID (e.g. ZN-BLR-37)
+ * Determines whether coordinates fall within the Bengaluru demo region (~70 km radius).
  */
-export function getNextZoneId(zones: EditableZone[]): string {
+export function isDemoRegion(lat: number, lng: number): boolean {
+  const d = haversineDistanceKm(lat, lng, 12.9716, 77.5946);
+  return d <= 70;
+}
+
+/**
+ * Generates next unique Zone ID.
+ * Uses ZN-BLR-### for demo-region points; otherwise ZN-###.
+ */
+export function getNextZoneId(
+  zones: EditableZone[],
+  location?: { lat: number; lng: number } | null
+): string {
   let maxNum = 0;
+  const existingIds = new Set(zones.map((z) => z.id));
   for (const z of zones) {
     const match = z.id.match(/\d+$/);
     if (match) {
@@ -147,14 +162,31 @@ export function getNextZoneId(zones: EditableZone[]): string {
       if (!isNaN(num) && num > maxNum) maxNum = num;
     }
   }
-  return `ZN-BLR-${maxNum + 1}`;
+
+  let nextNum = maxNum + 1;
+  const inDemo = location ? isDemoRegion(location.lat, location.lng) : true;
+  const prefix = inDemo ? 'ZN-BLR-' : 'ZN-';
+
+  while (
+    existingIds.has(`${prefix}${nextNum}`) ||
+    existingIds.has(`${prefix}${String(nextNum).padStart(3, '0')}`)
+  ) {
+    nextNum++;
+  }
+
+  return inDemo ? `${prefix}${nextNum}` : `${prefix}${String(nextNum).padStart(3, '0')}`;
 }
 
 /**
- * Generates next unique Hub ID (e.g. HUB-BLR-21)
+ * Generates next unique Hub ID.
+ * Uses HUB-BLR-### for demo-region points; otherwise HUB-###.
  */
-export function getNextHubId(hubs: EditableHub[]): string {
+export function getNextHubId(
+  hubs: EditableHub[],
+  location?: { lat: number; lng: number } | null
+): string {
   let maxNum = 0;
+  const existingIds = new Set(hubs.map((h) => h.id));
   for (const h of hubs) {
     const match = h.id.match(/\d+$/);
     if (match) {
@@ -162,7 +194,19 @@ export function getNextHubId(hubs: EditableHub[]): string {
       if (!isNaN(num) && num > maxNum) maxNum = num;
     }
   }
-  return `HUB-BLR-${maxNum + 1}`;
+
+  let nextNum = maxNum + 1;
+  const inDemo = location ? isDemoRegion(location.lat, location.lng) : true;
+  const prefix = inDemo ? 'HUB-BLR-' : 'HUB-';
+
+  while (
+    existingIds.has(`${prefix}${nextNum}`) ||
+    existingIds.has(`${prefix}${String(nextNum).padStart(3, '0')}`)
+  ) {
+    nextNum++;
+  }
+
+  return inDemo ? `${prefix}${nextNum}` : `${prefix}${String(nextNum).padStart(3, '0')}`;
 }
 
 /**

@@ -30,6 +30,66 @@ function setLru<K, V>(map: Map<K, V>, key: K, value: V) {
 }
 
 /**
+ * Specificity order: name → street → suburb/locality → district → city
+ */
+export function pickSpecificLabel(
+  props: Record<string, any> | undefined,
+  lat?: number,
+  lng?: number
+): string {
+  if (!props) {
+    return lat !== undefined && lng !== undefined
+      ? `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`
+      : 'New Location';
+  }
+
+  const candidate =
+    props.name ||
+    props.street ||
+    props.suburb ||
+    props.locality ||
+    props.district ||
+    props.city;
+
+  if (candidate && typeof candidate === 'string' && candidate.trim().length > 0) {
+    return candidate.trim();
+  }
+
+  return lat !== undefined && lng !== undefined
+    ? `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`
+    : 'New Location';
+}
+
+/**
+ * Builds formatted full address for helper text display.
+ */
+export function buildFullAddress(place: PhotonPlaceResult): string {
+  const p = place.rawProperties || {};
+  const parts = [
+    p.name,
+    p.street,
+    p.suburb || p.locality,
+    p.district,
+    p.city,
+    p.state,
+    p.postcode,
+    p.country,
+  ].filter(Boolean);
+
+  if (parts.length > 0) {
+    const deduped: string[] = [];
+    for (const part of parts) {
+      if (typeof part === 'string' && part.trim() && !deduped.includes(part.trim())) {
+        deduped.push(part.trim());
+      }
+    }
+    return deduped.join(', ');
+  }
+
+  return place.label || `${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}`;
+}
+
+/**
  * Defensively extracts a human-readable display label from Photon GeoJSON properties.
  * Never invents fake information.
  */
@@ -39,13 +99,13 @@ export function buildPhotonLabel(props: Record<string, any>, lat: number, lng: n
   suburbOrDistrict?: string;
   state?: string;
 } {
-  const name = props.name || props.street || props.housenumber || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-  const suburb = props.suburb || props.district || props.city || props.county;
+  const name = pickSpecificLabel(props, lat, lng);
+  const suburb = props.suburb || props.locality || props.district || props.city || props.county;
   const state = props.state;
 
   const parts = [name];
   if (suburb && suburb !== name) parts.push(suburb);
-  if (state && state !== suburb) parts.push(state);
+  if (state && state !== suburb && state !== name) parts.push(state);
 
   return {
     label: parts.join(', '),
