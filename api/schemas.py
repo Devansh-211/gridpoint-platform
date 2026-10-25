@@ -1,8 +1,6 @@
-"""Pydantic request and response models for GRIDPOINT REST API.
-"""
-
-from typing import List, Dict, Optional, Any
-from pydantic import BaseModel, Field
+import math
+from typing import List, Dict, Optional, Any, Union
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 
 
 # 1. Neighborhood models
@@ -33,27 +31,138 @@ class UploadResponse(BaseModel):
     source_label: Optional[str] = None
 
 
+class ZoneInput(BaseModel):
+    """Stateless input representation of a delivery zone or customer cluster."""
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    name: Optional[str] = None
+    lat: float = Field(default=0.0, alias="latitude")
+    lng: float = Field(default=0.0, alias="longitude")
+    orders: float = Field(default=0.0, alias="daily_orders")
+    capacity: Optional[float] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_zone_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            d = dict(data)
+            if "lat" in d and "latitude" not in d:
+                d["latitude"] = d["lat"]
+            elif "latitude" in d and "lat" not in d:
+                d["lat"] = d["latitude"]
+            if "lng" in d and "longitude" not in d:
+                d["longitude"] = d["lng"]
+            elif "longitude" in d and "lng" not in d:
+                d["lng"] = d["longitude"]
+            if "demand" in d and "daily_orders" not in d and "orders" not in d:
+                d["daily_orders"] = d["demand"]
+                d["orders"] = d["demand"]
+            elif "orders" in d and "daily_orders" not in d:
+                d["daily_orders"] = d["orders"]
+            elif "daily_orders" in d and "orders" not in d:
+                d["orders"] = d["daily_orders"]
+            if not d.get("name"):
+                d["name"] = d.get("id", "Zone")
+            return d
+        return data
+
+
+class CandidateInput(BaseModel):
+    """Stateless input representation of a candidate warehouse or distribution site."""
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    id: str
+    name: Optional[str] = None
+    lat: float = Field(default=0.0, alias="latitude")
+    lng: float = Field(default=0.0, alias="longitude")
+    capacity: Optional[float] = None
+    lease: Optional[float] = Field(default=None, alias="daily_lease")
+    area_sq_ft: Optional[float] = None
+    lease_inr_per_sq_ft_month: Optional[float] = None
+    zoning_type: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_candidate_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            d = dict(data)
+            if "lat" in d and "latitude" not in d:
+                d["latitude"] = d["lat"]
+            elif "latitude" in d and "lat" not in d:
+                d["lat"] = d["latitude"]
+            if "lng" in d and "longitude" not in d:
+                d["longitude"] = d["lng"]
+            elif "longitude" in d and "lng" not in d:
+                d["lng"] = d["longitude"]
+            for k in ("daily_lease", "daily_lease_inr", "fixed_cost", "dailyLease"):
+                if k in d and "lease" not in d:
+                    d["lease"] = d[k]
+                    d["daily_lease"] = d[k]
+            if not d.get("name"):
+                d["name"] = d.get("id", "Candidate")
+            return d
+        return data
+
+
 # 2. Optimization models
 class OptimizeRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
     session_id: Optional[str] = "default"
+    dataset: Optional[str] = "demo"
+    zones: Optional[List[ZoneInput]] = Field(default=None, description="Optional custom delivery zones (stateless payload)")
+    candidates: Optional[List[CandidateInput]] = Field(default=None, description="Optional custom candidate warehouse locations (stateless payload)")
     p: int = Field(default=3, ge=1, description="Exact number of warehouses to open (in Manual mode)")
     auto_size: bool = Field(default=False, description="Whether to auto-size warehouse count to minimize total cost (Auto mode)")
     p_max: Optional[int] = Field(default=None, ge=1, description="Maximum warehouse count to consider in auto-size mode")
     warehouse_capacity: float = Field(default=4000.0, gt=0, description="Daily throughput capacity ceiling per site")
     radius_max_km: Optional[float] = Field(default=None, gt=0, description="Max service radius in kilometers")
-    cost_per_km: float = Field(default=1.25, gt=0, description="Cost per kilometer of delivery travel")
-    fixed_cost_per_warehouse: float = Field(default=300.0, ge=0, description="Daily facility lease cost per warehouse")
+    cost_per_km: float = Field(default=1.25, gt=0, description="Cost per kilometer of delivery travel (INR/order-km)")
+    fixed_cost_per_warehouse: float = Field(default=300.0, ge=0, description="Daily facility lease cost per warehouse (INR/day)")
     routing_mode: str = Field(default="haversine", description="'haversine' or 'road_detour'")
     priority_preset: Optional[str] = Field(default="cost", description="'cost', 'speed', or 'sustainability'")
+    assignment_mode: Optional[str] = Field(default="single", description="'single' (binary single-depot assignment) or 'split' (fractional continuous flow)")
     include_cvrp: bool = Field(default=False, description="Whether to refine straight-line to CVRP vehicle routes")
     vehicle_capacity: int = Field(default=250, gt=0, description="Vehicle order payload capacity")
     vehicle_fixed_cost: float = Field(default=150.0, ge=0, description="Fixed cost penalty per vehicle dispatched")
     time_window_start: Optional[str] = Field(default=None, description="Start of delivery time window HH:MM")
     time_window_end: Optional[str] = Field(default=None, description="End of delivery time window HH:MM")
-    distanceKm: Optional[Dict[str, Dict[str, float]]] = Field(
+    time_budget_s: Optional[float] = Field(default=25.0, gt=0, description="Overall solve time budget in seconds")
+    best_effort: Optional[bool] = Field(default=False, description="If true, returns best effort partial solution on infeasibility")
+    distanceKm: Optional[Any] = Field(
         default=None,
         description="Optional custom road/driving distance matrix in km: {hub_id: {zone_id: dist_km}}"
     )
+
+    @field_validator("distanceKm", mode="before")
+    @classmethod
+    def validate_distance_km(cls, v: Any) -> Optional[Dict[str, Dict[str, float]]]:
+        """Validates distance matrix or treats null/empty as not provided."""
+        if v is None:
+            return None
+        if isinstance(v, (list, tuple)):
+            if len(v) == 0:
+                return None
+            raise ValueError("distanceKm list format must be a dict of dicts: {hub_id: {zone_id: dist_km}}")
+        if isinstance(v, dict):
+            if len(v) == 0:
+                return None
+            cleaned: Dict[str, Dict[str, float]] = {}
+            for src_k, row in v.items():
+                if not isinstance(row, dict):
+                    raise ValueError(f"Invalid row format at distanceKm['{src_k}']: expected dictionary")
+                cleaned_row: Dict[str, float] = {}
+                for dst_k, val in row.items():
+                    try:
+                        f_val = float(val)
+                    except (TypeError, ValueError):
+                        raise ValueError(f"Invalid non-numeric value at distanceKm['{src_k}']['{dst_k}']: {val}")
+                    if not math.isfinite(f_val):
+                        raise ValueError(f"Non-finite (NaN or Inf) value at distanceKm['{src_k}']['{dst_k}']: {val}")
+                    if f_val < 0.0:
+                        raise ValueError(f"Negative distance value at distanceKm['{src_k}']['{dst_k}']: {f_val}")
+                    cleaned_row[str(dst_k)] = f_val
+                cleaned[str(src_k)] = cleaned_row
+            return cleaned
+        raise ValueError(f"Invalid distanceKm format: expected dict of dicts or None, got {type(v).__name__}")
 
 
 class WarehouseSummary(BaseModel):
@@ -83,16 +192,17 @@ class AssignmentItem(BaseModel):
 
 
 class OptimizeResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
     status: str
     solver_message: str
-    is_optimal: bool
+    is_optimal: bool = False
     p: int
     auto_size: bool = False
-    total_weighted_distance_km: float
+    total_weighted_distance_km: float = 0.0
     average_distance_km: float = 0.0
-    total_delivery_cost: float
-    total_infrastructure_cost: float
-    combined_total_cost: float
+    total_delivery_cost: float = 0.0
+    total_infrastructure_cost: float = 0.0
+    combined_total_cost: float = 0.0
     total_system_capacity: float = 0.0
     total_system_demand: float = 0.0
     capacity_headroom: float = 0.0
@@ -105,13 +215,17 @@ class OptimizeResponse(BaseModel):
     co2_baseline_kg_per_day: float = 0.0
     co2_reduction_pct: float = 0.0
     estimated_monthly_savings: float = 0.0
-    assumptions: Dict[str, Any]
-    warehouses: List[WarehouseSummary]
-    assignments: List[AssignmentItem]
+    assumptions: Dict[str, Any] = Field(default_factory=dict)
+    warehouses: List[WarehouseSummary] = Field(default_factory=list)
+    assignments: List[AssignmentItem] = Field(default_factory=list)
     cvrp_summary: Optional[Dict[str, Any]] = None
     solve_ms: Optional[float] = None
     solver_status: Optional[str] = None
     mip_gap: Optional[float] = None
+    # Structured outcome extensions
+    shortfall_orders: Optional[float] = None
+    min_feasible_p: Optional[int] = None
+    reason: Optional[str] = None
 
 
 
@@ -336,17 +450,24 @@ class VerificationSummary(BaseModel):
 
 
 class RankRequest(OptimizeRequest):
+    max_alternatives: int = Field(default=4, ge=0, le=10, description="Max alternative configurations to generate (0-10)")
     verify: bool = Field(default=False, description="Enumerate combinations and run transportation LP verification when C(M, p) <= 5000")
 
 
 class RankResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
     session_id: str
     p: int
-    optimal: OptimizeResponse
-    alternatives: List[AlternativeConfig]
-    site_scores: List[SiteScoreItem]
+    optimal: Optional[OptimizeResponse] = None
+    alternatives: List[AlternativeConfig] = Field(default_factory=list)
+    site_scores: List[SiteScoreItem] = Field(default_factory=list)
     verification: Optional[VerificationSummary] = None
-    solve_ms: float
+    solve_ms: float = 0.0
+    status: Optional[str] = "Optimal"
+    partial: Optional[bool] = False
+    shortfall_orders: Optional[float] = None
+    min_feasible_p: Optional[int] = None
+    reason: Optional[str] = None
 
 
 

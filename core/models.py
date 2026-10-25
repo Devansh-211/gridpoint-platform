@@ -30,6 +30,7 @@ class WarehouseCandidate:
     area_sq_ft: Optional[float] = None
     lease_inr_per_sq_ft_month: Optional[float] = None
     zoning_type: Optional[str] = None
+    daily_lease_inr: Optional[float] = None
 
 
 @dataclass
