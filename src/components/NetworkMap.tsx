@@ -8,6 +8,7 @@ import { OptimizeResponse, SiteScoreItem, Currency } from '../types';
 import { formatMoney } from '../lib/currency';
 import { reverseGeocodePhoton, PhotonPlaceResult } from '../services/photonService';
 import { BASEMAP_PROVIDERS, BasemapType } from '../config/basemaps';
+import { Z_CLASSES } from '../config/zIndexTokens';
 import { calculateRobustBounds, radiusKmToMeters } from '../lib/geoBounds';
 import { Layers, Loader2, MapPin, X, AlertTriangle, Maximize2, Crosshair } from 'lucide-react';
 
@@ -730,15 +731,16 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
 
   return (
     <div
-      className={`relative h-[520px] min-h-[360px] w-full overflow-hidden rounded-xl border border-gp-border bg-slate-100 shadow-sm ${
+      className={`relative isolate z-0 h-[520px] min-h-[360px] w-full overflow-hidden rounded-xl border border-gp-border bg-slate-100 shadow-sm ${
         isAddClickActive ? 'cursor-crosshair' : ''
       }`}
+      style={{ position: 'relative', isolation: 'isolate', zIndex: 0 }}
     >
       <div ref={mapContainerRef} className="h-full w-full" />
 
       {/* Click Map Active Banner */}
       {isAddClickActive && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xl animate-pulse">
+        <div className={`absolute top-3 left-1/2 -translate-x-1/2 ${Z_CLASSES.mapOverlays} flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xl animate-pulse`}>
           <MapPin className="h-4 w-4 shrink-0" />
           <span>Click anywhere on the map to place a delivery zone / candidate hub • Press Esc to cancel</span>
           <button
@@ -754,28 +756,28 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
 
       {/* Top-Left Routing Status Badge (shifted to right of Leaflet zoom control at left: 64px) */}
       {routingStatusBadge && (
-        <div className="absolute top-3 left-[64px] z-[1000]">
+        <div className={`absolute top-3 left-[64px] ${Z_CLASSES.mapOverlays}`}>
           {routingStatusBadge}
         </div>
       )}
 
       {/* Failover Toast Notification */}
       {toastMessage && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-lg bg-slate-900/90 text-white px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur animate-in fade-in duration-200">
+        <div className={`absolute top-14 left-1/2 -translate-x-1/2 ${Z_CLASSES.mapOverlays} flex items-center gap-2 rounded-lg bg-slate-900/90 text-white px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur animate-in fade-in duration-200`}>
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Basemap Unavailable Warning Chip */}
       {isBasemapUnavailable && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-1 text-[11px] font-semibold text-slate-200 shadow-md">
+        <div className={`absolute top-14 left-1/2 -translate-x-1/2 ${Z_CLASSES.mapOverlays} flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-1 text-[11px] font-semibold text-slate-200 shadow-md`}>
           <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 animate-pulse" />
           <span>Basemap unavailable</span>
         </div>
       )}
 
       {/* Map Controls Overlay */}
-      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1.5 rounded-lg border border-gp-border bg-white/95 p-2.5 text-xs shadow-md backdrop-blur max-w-[220px]">
+      <div className={`absolute top-3 right-3 ${Z_CLASSES.mapOverlays} flex flex-col gap-1.5 rounded-lg border border-gp-border bg-white/95 p-2.5 text-xs shadow-md backdrop-blur max-w-[220px]`}>
         <div className="flex items-center gap-1.5 font-bold text-gp-text-primary border-b border-gp-border pb-1 mb-1">
           <Layers className="h-3.5 w-3.5 text-gp-primary-500" />
           <span>Network & Site Layers</span>
@@ -908,7 +910,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
       </div>
 
       {/* Legend Overlay with Footprint Disclaimer */}
-      <div className="absolute bottom-3 left-3 z-[1000] flex flex-col gap-1 rounded-lg border border-gp-border bg-white/95 px-3 py-2 text-[11px] shadow-md backdrop-blur text-gp-text-secondary">
+      <div className={`absolute bottom-3 left-3 ${Z_CLASSES.mapOverlays} flex flex-col gap-1 rounded-lg border border-gp-border bg-white/95 px-3 py-2 text-[11px] shadow-md backdrop-blur text-gp-text-secondary`}>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="h-3 w-3 rounded-full bg-emerald-500 border border-white shadow" />

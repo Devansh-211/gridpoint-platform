@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Currency } from '../../types';
+import { Z_CLASSES } from '../../config/zIndexTokens';
 import {
   Menu,
   Database,
@@ -94,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header
       ref={containerRef}
-      className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#E2E8F0] bg-white px-4 sm:px-6 shadow-xs"
+      className={`sticky top-0 ${Z_CLASSES.stickyHeader} flex h-16 w-full items-center justify-between border-b border-[#E2E8F0] bg-white px-4 sm:px-6 shadow-xs`}
     >
       {/* Left: Mobile Menu Toggle & Chips */}
       <div className="flex items-center gap-3 min-w-0">

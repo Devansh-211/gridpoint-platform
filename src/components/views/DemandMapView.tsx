@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { PageHeader } from '../shell/PageHeader';
 import { NetworkMap } from '../NetworkMap';
 import { ZoneDemandTable } from '../ZoneDemandTable';
@@ -9,6 +10,7 @@ import { OptimizeResponse, Currency, SiteScoreItem } from '../../types';
 import { OsrmMatrixResult, haversineKm } from '../../services/osrmMatrixService';
 import { calculateHourlyOrders, PEAK_HOUR_LABEL } from '../../lib/demandProfile';
 import { formatMoney } from '../../lib/currency';
+import { Z_CLASSES } from '../../config/zIndexTokens';
 import {
   MapPin,
   TrendingUp,
@@ -427,16 +429,22 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
             defaultWarehouseCapacity={4000}
             defaultFixedLeaseInr={15000}
             externalPlace={externalPlace || null}
-            onClearExternalPlace={onClearExternalPlace || (() => {})}
+            onClearExternalPlace={() => {
+              setIsClickToAddActive(false);
+              if (onClearExternalPlace) onClearExternalPlace();
+            }}
           />
         </div>
 
         {/* 4. Center Grid: Interactive Map + Zone Inspector */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Left: Map Container (2 Columns) */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs relative">
+          <div
+            className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs relative isolate z-0"
+            style={{ position: 'relative', isolation: 'isolate', zIndex: 0 }}
+          >
             {/* Top Toolbar Overlay on Map */}
-            <div className="absolute top-3 left-3 z-20 flex items-center gap-2 rounded-lg bg-white/90 backdrop-blur-xs px-3 py-1.5 border border-slate-200 text-[11px] font-mono text-slate-700 shadow-xs">
+            <div className={`absolute top-3 left-3 ${Z_CLASSES.mapOverlays} flex items-center gap-2 rounded-lg bg-white/90 backdrop-blur-xs px-3 py-1.5 border border-slate-200 text-[11px] font-mono text-slate-700 shadow-xs`}>
               <span className="font-semibold text-blue-700 whitespace-nowrap">
                 {mapCenter.lat.toFixed(4)}° N, {mapCenter.lng.toFixed(4)}° E
               </span>
@@ -445,7 +453,7 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
             </div>
 
             {/* Top Right Map-Click Toggle */}
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+            <div className={`absolute top-3 right-3 ${Z_CLASSES.mapOverlays} flex items-center gap-1.5`}>
               <button
                 type="button"
                 onClick={() => setIsClickToAddActive((prev) => !prev)}
@@ -684,8 +692,9 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
       </div>
 
       {/* Reassign Zone Hub Modal */}
-      {isReassignModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
+      {isReassignModalOpen && typeof document !== 'undefined' &&
+        createPortal(
+          <div className={`fixed inset-0 ${Z_CLASSES.dialogs} flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4`} role="dialog" aria-modal="true">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in-50 zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -774,7 +783,8 @@ export const DemandMapView: React.FC<DemandMapViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

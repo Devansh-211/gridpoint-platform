@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   searchPhotonPlaces,
   PhotonPlaceResult,
@@ -11,6 +12,7 @@ import {
 } from '../lib/networkState';
 import { Currency } from '../types';
 import { formatMoney, convertCurrency } from '../lib/currency';
+import { Z_CLASSES } from '../config/zIndexTokens';
 import {
   Search,
   MapPin,
@@ -63,6 +65,72 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Focus trap, body scroll lock and Escape key dismiss
+  useEffect(() => {
+    if (selectedPlace) {
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      const timer = setTimeout(() => {
+        if (modalRef.current) {
+          const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusable.length > 0) {
+            focusable[0].focus();
+          }
+        }
+      }, 50);
+
+      const handleModalKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          handleCloseForm();
+          return;
+        }
+
+        if (e.key === 'Tab' && modalRef.current) {
+          const focusables = Array.from(
+            modalRef.current.querySelectorAll<HTMLElement>(
+              'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )
+          ).filter((el) => el.offsetParent !== null || el.getAttribute('type') !== 'hidden');
+
+          if (focusables.length === 0) return;
+
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === first || !modalRef.current.contains(document.activeElement)) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last || !modalRef.current.contains(document.activeElement)) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleModalKeyDown);
+
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('keydown', handleModalKeyDown);
+        document.body.style.overflow = originalOverflow;
+        if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+          previousFocusRef.current.focus();
+        }
+      };
+    }
+  }, [selectedPlace]);
 
   // When external place (e.g. from map click) arrives, open form directly
   useEffect(() => {
@@ -280,14 +348,21 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
       )}
 
       {/* Add to Network Modal / Form */}
-      {selectedPlace && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="add-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs"
-        >
-          <div className="w-full max-w-lg rounded-2xl border border-gp-border bg-white p-6 shadow-2xl space-y-5 animate-in fade-in duration-150">
+      {selectedPlace && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-modal-title"
+            className={`fixed inset-0 ${Z_CLASSES.dialogs} flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs`}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                handleCloseForm();
+              }
+            }}
+          >
+            <div className="w-full max-w-lg rounded-2xl border border-gp-border bg-white p-6 shadow-2xl space-y-5 animate-in fade-in duration-150">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gp-border pb-3">
               <div className="flex items-center gap-2">
@@ -462,7 +537,8 @@ export const PhotonSearch: React.FC<PhotonSearchProps> = ({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

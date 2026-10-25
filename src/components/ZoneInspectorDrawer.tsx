@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { EditableZone, EditableHub, getEffectiveOrders } from '../lib/networkState';
 import { ZoneAssignmentResult } from '../solver/types';
 import { Currency } from '../types';
 import { formatMoney, convertCurrency } from '../lib/currency';
+import { Z_CLASSES } from '../config/zIndexTokens';
 import { OrderQuantityEditor } from './OrderQuantityEditor';
 import { X, Trash2, Undo2, Redo2, MapPin, Building2, Navigation, Clock, AlertTriangle } from 'lucide-react';
 
@@ -76,13 +78,14 @@ export const ZoneInspectorDrawer: React.FC<ZoneInspectorDrawerProps> = ({
   }, [isOpen, onClose, onUndo, onRedo, canUndo, canRedo]);
 
   if (!isOpen || !item) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="inspector-title"
-      className="fixed inset-y-0 right-0 z-50 flex max-w-full pl-10"
+      className={`fixed inset-y-0 right-0 ${Z_CLASSES.drawers} flex max-w-full pl-10`}
     >
       {/* Backdrop */}
       <div
@@ -329,6 +332,7 @@ export const ZoneInspectorDrawer: React.FC<ZoneInspectorDrawerProps> = ({
           </span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { SiteScoreItem, Currency } from '../types';
 import { formatMoney } from '../lib/currency';
 import { OFFICIAL_PORTALS } from '../config/portals';
+import { Z_CLASSES } from '../config/zIndexTokens';
 import {
   X,
   Building2,
@@ -86,8 +87,8 @@ export const RegistryDrawer: React.FC<RegistryDrawerProps> = ({
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in" />
-        <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-white shadow-2xl transition-transform animate-in slide-in-from-right duration-300">
+        <Dialog.Overlay className={`fixed inset-0 ${Z_CLASSES.drawers} bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in`} />
+        <Dialog.Content className={`fixed inset-y-0 right-0 ${Z_CLASSES.drawers} flex w-full max-w-lg flex-col bg-white shadow-2xl transition-transform animate-in slide-in-from-right duration-300`}>
           {/* Header */}
           <div className="flex items-start justify-between border-b border-slate-200 p-5">
             <div>
